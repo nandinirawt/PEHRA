@@ -1,6 +1,6 @@
 import "./index.css";
 
-function StatCard({ label, value, detail, type }) {
+function StatCard({ label, value, detail, type = "neutral" }) {
   return (
     <div className="stat-card">
       <div className="stat-top">
@@ -15,29 +15,18 @@ function StatCard({ label, value, detail, type }) {
   );
 }
 
-function Seat({ status }) {
-  return <div className={`seat ${status}`}></div>;
-}
-
 function Dashboard() {
-  const seats = [
-    "normal", "normal", "normal", "normal", "normal", "normal",
-    "normal", "normal", "review", "normal", "normal", "normal",
-    "normal", "normal", "normal", "normal", "high", "normal",
-    "normal", "normal", "normal", "review", "normal", "normal",
-    "normal", "normal", "normal", "normal", "normal", "normal",
-    "normal", "normal", "normal", "normal", "normal", "normal",
-  ];
-
   return (
     <div className="app">
 
-      {/* TOP NAVIGATION */}
+      {/* =========================
+          TOP NAVIGATION
+      ========================== */}
       <header className="navbar">
 
         <div className="brand">
           <img
-            src="/pehraa-logo.png"
+            src="/pehra-logo.png"
             alt="PEHRA"
             className="brand-logo"
           />
@@ -45,12 +34,14 @@ function Dashboard() {
           <span className="brand-name">PEHRA</span>
         </div>
 
+
         <nav className="nav-links">
           <a className="active">Dashboard</a>
           <a>Exams</a>
           <a>Live Monitor</a>
           <a>Privacy</a>
         </nav>
+
 
         <div className="nav-right">
 
@@ -60,12 +51,21 @@ function Dashboard() {
           </button>
 
           <div className="profile">
-            <div className="avatar">N</div>
+
+            <div className="avatar">
+              N
+            </div>
 
             <div className="profile-info">
-              <span className="profile-name">Nandini</span>
-              <span className="profile-role">Invigilator</span>
+              <span className="profile-name">
+                Nandini
+              </span>
+
+              <span className="profile-role">
+                Invigilator
+              </span>
             </div>
+
           </div>
 
         </div>
@@ -73,225 +73,502 @@ function Dashboard() {
       </header>
 
 
-      {/* MAIN DASHBOARD */}
+      {/* =========================
+          MAIN DASHBOARD
+      ========================== */}
       <main className="dashboard">
 
+
+        {/* =========================
+            WELCOME
+        ========================== */}
         <section className="welcome">
 
           <div>
-            <p className="eyebrow">EXAMINATION CONTROL CENTER</p>
 
-            <h1>Good morning, Nandini.</h1>
+            <p className="eyebrow">
+              EXAMINATION CONTROL CENTER
+            </p>
+
+            <h1>
+              Good morning, Nandini.
+            </h1>
 
             <p className="subtitle">
-              Here's what's happening with your examinations today.
+              Here's your examination overview for today.
             </p>
+
           </div>
 
+
           <div className="system-status">
+
             <span className="status-live"></span>
+
             System Active
+
           </div>
 
         </section>
 
 
-        {/* ACTIVE EXAM */}
+
+        {/* =========================
+            ACTIVE EXAM
+        ========================== */}
         <section className="active-exam">
 
           <div className="active-left">
 
             <div className="live-label">
+
               <span className="pulse"></span>
+
               LIVE EXAM
+
             </div>
+
 
             <div className="exam-title">
               Semester End Examination — Mathematics
             </div>
 
+
             <div className="exam-meta">
+
               <span>Hall A</span>
+
               <span>•</span>
+
               <span>72 Students</span>
+
               <span>•</span>
-              <span>Started 10:24 AM</span>
+
+              <span>01:24:32 elapsed</span>
+
             </div>
 
           </div>
 
+
           <button className="monitor-button">
+
             Open Live Monitor
+
             <span>→</span>
+
           </button>
 
         </section>
 
 
-        {/* STATISTICS */}
+
+        {/* =========================
+            OVERVIEW STATISTICS
+        ========================== */}
         <section className="stats">
 
           <StatCard
-            label="Total Students"
-            value="72"
-            detail="72 / 72 present"
+            label="Today's Exams"
+            value="4"
+            detail="1 active · 1 completed · 2 upcoming"
             type="neutral"
           />
 
+
           <StatCard
-            label="Normal"
-            value="57"
-            detail="79.2% of students"
+            label="Completed"
+            value="1"
+            detail="Examination completed today"
             type="normal"
           />
 
+
           <StatCard
-            label="Under Review"
-            value="10"
-            detail="13.9% of students"
+            label="Upcoming"
+            value="2"
+            detail="Next examination at 02:00 PM"
             type="review"
           />
 
+
           <StatCard
-            label="High Risk"
-            value="5"
-            detail="6.9% of students"
+            label="Attention"
+            value="3"
+            detail="Events requiring review"
             type="high"
           />
 
         </section>
 
 
-        {/* MAIN CONTENT GRID */}
+
+        {/* =========================
+            LOWER DASHBOARD
+        ========================== */}
         <section className="dashboard-grid">
 
-          {/* SEATING MAP */}
-          <div className="panel seating-panel">
+
+          {/* =========================
+              TODAY'S SCHEDULE
+          ========================== */}
+          <div className="panel schedule-panel">
 
             <div className="panel-header">
 
               <div>
-                <h2>Examination Hall</h2>
-                <p>Hall A · Current seating status</p>
+
+                <h2>
+                  Today's Schedule
+                </h2>
+
+                <p>
+                  Your examination schedule for today
+                </p>
+
               </div>
 
+
               <button className="text-button">
-                View Monitor →
+                View all →
               </button>
 
             </div>
 
-            <div className="legend">
 
-              <span>
-                <i className="legend-dot normal"></i>
-                Normal
-              </span>
-
-              <span>
-                <i className="legend-dot review"></i>
-                Under Review
-              </span>
-
-              <span>
-                <i className="legend-dot high"></i>
-                High Risk
-              </span>
-
-            </div>
+            <div className="schedule-list">
 
 
-            <div className="seat-map">
+              {/* Physics */}
+              <div className="schedule-row">
 
-              {seats.map((status, index) => (
-                <Seat key={index} status={status} />
-              ))}
+                <div className="schedule-time">
+                  09:00 AM
+                </div>
 
-            </div>
 
-            <div className="hall-footer">
-              <span>6 columns</span>
-              <span>12 rows</span>
-              <span>72 seats</span>
+                <div className="schedule-main">
+
+                  <strong>
+                    Physics
+                  </strong>
+
+                  <span>
+                    Hall B · 64 Students
+                  </span>
+
+                </div>
+
+
+                <div className="schedule-status completed">
+                  ✓ Completed
+                </div>
+
+              </div>
+
+
+
+              {/* Mathematics */}
+              <div className="schedule-row active-row">
+
+                <div className="schedule-time">
+                  10:24 AM
+                </div>
+
+
+                <div className="schedule-main">
+
+                  <strong>
+                    Mathematics
+                  </strong>
+
+                  <span>
+                    Hall A · 72 Students
+                  </span>
+
+                </div>
+
+
+                <div className="schedule-status live">
+                  ● Live
+                </div>
+
+              </div>
+
+
+
+              {/* Data Structures */}
+              <div className="schedule-row">
+
+                <div className="schedule-time">
+                  02:00 PM
+                </div>
+
+
+                <div className="schedule-main">
+
+                  <strong>
+                    Data Structures
+                  </strong>
+
+                  <span>
+                    Hall B · 68 Students
+                  </span>
+
+                </div>
+
+
+                <div className="schedule-status upcoming">
+                  Upcoming
+                </div>
+
+              </div>
+
+
+
+              {/* DBMS */}
+              <div className="schedule-row">
+
+                <div className="schedule-time">
+                  04:00 PM
+                </div>
+
+
+                <div className="schedule-main">
+
+                  <strong>
+                    Database Systems
+                  </strong>
+
+                  <span>
+                    Hall A · 70 Students
+                  </span>
+
+                </div>
+
+
+                <div className="schedule-status upcoming">
+                  Upcoming
+                </div>
+
+              </div>
+
+
             </div>
 
           </div>
 
 
-          {/* RIGHT SIDE */}
-          <div className="right-column">
 
-            {/* SYSTEM HEALTH */}
-            <div className="panel">
+          {/* =========================
+              SYSTEM STATUS
+          ========================== */}
+          <div className="panel system-panel">
 
-              <div className="panel-header">
-                <div>
-                  <h2>System Health</h2>
-                  <p>Local examination environment</p>
-                </div>
+            <div className="panel-header">
 
-                <span className="healthy-badge">
-                  Healthy
+              <div>
+
+                <h2>
+                  System Status
+                </h2>
+
+                <p>
+                  Local examination environment
+                </p>
+
+              </div>
+
+
+              <span className="healthy-badge">
+                Healthy
+              </span>
+
+            </div>
+
+
+            <div className="health-list">
+
+
+              <div className="health-row">
+
+                <span>
+                  Edge Intelligence
                 </span>
+
+                <strong>
+                  Active
+                </strong>
+
+              </div>
+
+
+              <div className="health-row">
+
+                <span>
+                  Camera Network
+                </span>
+
+                <strong>
+                  4 / 4
+                </strong>
+
               </div>
 
 
-              <div className="health-list">
+              <div className="health-row">
 
-                <div className="health-row">
-                  <span>Edge Intelligence</span>
-                  <strong>Active</strong>
-                </div>
+                <span>
+                  Local Processing
+                </span>
 
-                <div className="health-row">
-                  <span>Camera Network</span>
-                  <strong>4 / 4</strong>
-                </div>
-
-                <div className="health-row">
-                  <span>Local Processing</span>
-                  <strong>Active</strong>
-                </div>
-
-                <div className="health-row">
-                  <span>Cloud Transmission</span>
-                  <strong>Disabled</strong>
-                </div>
+                <strong>
+                  Active
+                </strong>
 
               </div>
+
+
+              <div className="health-row">
+
+                <span>
+                  Privacy Mode
+                </span>
+
+                <strong>
+                  Protected
+                </strong>
+
+              </div>
+
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+
+        {/* =========================
+            RECENT ACTIVITY
+        ========================== */}
+        <section className="panel activity-panel">
+
+          <div className="panel-header">
+
+            <div>
+
+              <h2>
+                Recent Activity
+              </h2>
+
+              <p>
+                Latest examination and system events
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div className="activity-list">
+
+
+            <div className="activity-row">
+
+              <span className="activity-dot live"></span>
+
+              <div className="activity-content">
+
+                <strong>
+                  Mathematics examination started
+                </strong>
+
+                <span>
+                  Hall A · 72 students
+                </span>
+
+              </div>
+
+              <time>
+                10:24 AM
+              </time>
 
             </div>
 
 
-            {/* UPCOMING EXAM */}
-            <div className="panel upcoming-panel">
 
-              <div className="panel-header">
+            <div className="activity-row">
 
-                <div>
-                  <h2>Next Examination</h2>
-                  <p>Upcoming schedule</p>
-                </div>
+              <span className="activity-dot normal"></span>
+
+              <div className="activity-content">
+
+                <strong>
+                  Camera calibration completed
+                </strong>
+
+                <span>
+                  4 / 4 cameras ready
+                </span>
 
               </div>
 
-
-              <div className="upcoming-time">
-                <span>02:00</span>
-                <small>PM</small>
-              </div>
-
-              <h3>Data Structures</h3>
-
-              <div className="upcoming-meta">
-                Hall B · 68 Students
-              </div>
-
-              <button className="outline-button">
-                View Exam
-              </button>
+              <time>
+                10:21 AM
+              </time>
 
             </div>
+
+
+
+            <div className="activity-row">
+
+              <span className="activity-dot normal"></span>
+
+              <div className="activity-content">
+
+                <strong>
+                  Pre-exam check completed
+                </strong>
+
+                <span>
+                  All systems ready
+                </span>
+
+              </div>
+
+              <time>
+                10:18 AM
+              </time>
+
+            </div>
+
+
+
+            <div className="activity-row">
+
+              <span className="activity-dot neutral"></span>
+
+              <div className="activity-content">
+
+                <strong>
+                  Physics examination completed
+                </strong>
+
+                <span>
+                  Hall B · 64 students
+                </span>
+
+              </div>
+
+              <time>
+                09:58 AM
+              </time>
+
+            </div>
+
 
           </div>
 
@@ -300,33 +577,53 @@ function Dashboard() {
       </main>
 
 
-      {/* FIXED ACTIVE EXAM DOCK */}
+
+      {/* =========================
+          FLOATING ACTIVE EXAM DOCK
+      ========================== */}
       <div className="active-exam-dock">
 
         <div className="dock-status">
+
           <span className="dock-pulse"></span>
+
           LIVE
+
         </div>
+
 
         <div className="dock-divider"></div>
 
+
         <div className="dock-info">
-          <strong>Hall A</strong>
-          <span>Semester End Examination — Mathematics</span>
+
+          <strong>
+            Hall A
+          </strong>
+
+          <span>
+            Semester End Examination — Mathematics
+          </span>
+
         </div>
+
 
         <div className="dock-students">
           72 Students
         </div>
 
-        <button className="dock-button">
-          Monitor →
-        </button>
+
+        <div className="dock-time">
+          01:24:32
+        </div>
 
       </div>
 
 
-      {/* FOOTER */}
+
+      {/* =========================
+          FOOTER
+      ========================== */}
       <footer className="footer">
 
         <span>
