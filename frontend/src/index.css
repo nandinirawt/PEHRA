@@ -892,24 +892,177 @@ button {
 
     gap: 20px;
   }
+}
 
-  .active-exam-dock {
-    bottom: 12px;
+  /* =========================================================
+   GLOBAL ACTIVE EXAM DOCK
+========================================================= */
 
-    gap: 9px;
-  }
+.active-exam-dock {
+  position: fixed;
 
-  .dock-info {
-    min-width: 0;
-  }
+  left: 50%;
+  bottom: 18px;
 
-  .dock-info span {
-    max-width: 150px;
+  transform: translateX(-50%);
 
-    white-space: nowrap;
+  width: min(1120px, calc(100vw - 48px));
 
-    overflow: hidden;
+  min-height: 72px;
 
-    text-overflow: ellipsis;
-  }
+  z-index: 2000;
+
+  display: grid;
+
+  grid-template-columns:
+    auto
+    1px
+    minmax(280px, 1fr)
+    auto
+    auto;
+
+  align-items: center;
+
+  gap: 18px;
+
+  padding: 10px 14px 10px 18px;
+
+  border: 1px solid #303030;
+  border-radius: 16px;
+
+  background: #191919;
+  color: #ffffff;
+
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.22);
+
+  cursor: pointer;
+
+  text-align: left;
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.active-exam-dock:hover {
+  transform: translateX(-50%) translateY(-2px);
+
+  box-shadow:
+    0 22px 55px rgba(0, 0, 0, 0.28);
+}
+
+
+/* LIVE */
+
+.dock-status {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  color: #ffbd45;
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.4px;
+}
+
+.dock-pulse {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: #ffad1f;
+
+  box-shadow:
+    0 0 0 4px rgba(255, 173, 31, 0.12);
+}
+
+
+/* DIVIDER */
+
+.dock-divider {
+  width: 1px;
+  height: 36px;
+
+  background: #3b3b3b;
+}
+
+
+/* EXAM INFO */
+
+.dock-info {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+
+  min-width: 0;
+}
+
+.dock-info strong {
+  color: #ffffff;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+.dock-info span {
+  max-width: 430px;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+
+  color: #a6a6a6;
+
+  font-size: 11px;
+}
+
+
+/* STUDENTS */
+
+.dock-students {
+  color: #d0d0d0;
+
+  font-size: 11px;
+
+  font-weight: 500;
+
+  white-space: nowrap;
+}
+
+
+/* MONITOR BUTTON */
+
+.dock-monitor {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  min-width: 108px;
+
+  padding: 10px 16px;
+
+  border-radius: 8px;
+
+  background: #ffad1f;
+
+  color: #171717;
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  white-space: nowrap;
 }

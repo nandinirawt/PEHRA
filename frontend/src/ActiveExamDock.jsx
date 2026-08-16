@@ -1,6 +1,11 @@
-function ActiveExamDock() {
+function ActiveExamDock({ onMonitor }) {
   return (
-    <div className="active-exam-dock">
+    <button
+      className="active-exam-dock"
+      onClick={onMonitor}
+      type="button"
+      aria-label="Open live monitor"
+    >
       <div className="dock-status">
         <span className="dock-pulse"></span>
         LIVE
@@ -19,10 +24,10 @@ function ActiveExamDock() {
         72 Students
       </div>
 
-      <div className="dock-time">
-        01:24:32
+      <div className="dock-monitor">
+        Monitor →
       </div>
-    </div>
+    </button>
   );
 }
 
