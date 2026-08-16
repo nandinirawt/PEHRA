@@ -1,13 +1,11 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
-
 /* =========================================================
    GLOBAL
 ========================================================= */
 
 :root {
   font-family: "Inter", sans-serif;
-
   color: #171717;
   background: #ffffff;
 
@@ -25,150 +23,120 @@ html {
 
 body {
   margin: 0;
-
   min-width: 320px;
 
   background: #ffffff;
-
   color: #171717;
 }
 
-button {
+button,
+input,
+select {
   font-family: inherit;
+}
+
+button {
   cursor: pointer;
 }
 
-a {
-  text-decoration: none;
-}
-
-
 
 /* =========================================================
-   NAVBAR
+   GLOBAL NAVBAR
 ========================================================= */
 
 .navbar {
-
+  width: 100%;
   height: 72px;
 
   background: #171717;
-
-  color: white;
+  color: #ffffff;
 
   display: flex;
-
   align-items: center;
 
   padding: 0 42px;
 
   position: sticky;
-
   top: 0;
-
-  z-index: 100;
+  z-index: 1000;
 
   border-bottom: 1px solid #292929;
 }
 
 
-
 /* BRAND */
 
 .brand {
-
   display: flex;
-
   align-items: center;
-
   gap: 10px;
 
   min-width: 210px;
 }
 
-
 .brand-logo {
-
   width: 34px;
-
   height: 34px;
 
   object-fit: contain;
-
   display: block;
 }
 
-
 .brand-name {
+  color: #ffffff;
 
   font-size: 18px;
-
   font-weight: 700;
 
   letter-spacing: -0.3px;
 }
 
 
-
 /* NAV LINKS */
 
 .nav-links {
-
   display: flex;
-
   align-items: center;
 
   gap: 34px;
-
   height: 100%;
 }
 
-
-.nav-links a {
-
-  color: #a9a9a9;
-
-  font-size: 14px;
-
-  font-weight: 500;
-
-  height: 100%;
-
-  display: flex;
-
-  align-items: center;
-
+.nav-link-button {
   position: relative;
 
+  height: 100%;
+
+  border: 0;
+  outline: none;
+
+  background: transparent;
+  color: #a9a9a9;
+
+  padding: 0;
+
+  font-size: 14px;
+  font-weight: 500;
+
   cursor: pointer;
-
-  transition: color 0.2s ease;
 }
 
-
-.nav-links a:hover {
-
-  color: white;
+.nav-link-button:hover {
+  color: #ffffff;
 }
 
-
-.nav-links a.active {
-
-  color: white;
+.nav-link-button.active {
+  color: #ffffff;
 }
 
-
-.nav-links a.active::after {
-
+.nav-link-button.active::after {
   content: "";
 
   position: absolute;
 
-  bottom: 0;
-
   left: 0;
-
   right: 0;
+  bottom: 0;
 
   height: 2px;
 
@@ -176,112 +144,91 @@ a {
 }
 
 
-
-/* RIGHT NAV */
+/* NAV RIGHT */
 
 .nav-right {
-
   margin-left: auto;
 
   display: flex;
-
   align-items: center;
 
   gap: 24px;
 }
 
 
+/* NOTIFICATION */
+
 .notification {
+  position: relative;
 
   border: 0;
-
   background: transparent;
 
   color: #d1d1d1;
 
   font-size: 23px;
 
-  position: relative;
+  padding: 0;
 }
 
-
 .notification-dot {
+  position: absolute;
+
+  top: 2px;
+  right: 1px;
 
   width: 6px;
-
   height: 6px;
 
   background: #ffad1f;
 
   border-radius: 50%;
-
-  position: absolute;
-
-  top: 2px;
-
-  right: 1px;
 }
 
 
+/* PROFILE */
+
 .profile {
-
   display: flex;
-
   align-items: center;
-
   gap: 10px;
 }
 
-
 .avatar {
-
   width: 34px;
-
   height: 34px;
 
   border-radius: 50%;
 
   background: #ffad1f;
-
   color: #171717;
 
   display: flex;
-
   align-items: center;
-
   justify-content: center;
 
   font-size: 13px;
-
   font-weight: 700;
 }
 
-
 .profile-info {
-
   display: flex;
-
   flex-direction: column;
-
   gap: 2px;
 }
 
-
 .profile-name {
+  color: #ffffff;
 
   font-size: 13px;
-
   font-weight: 600;
 }
 
-
 .profile-role {
+  color: #929292;
 
   font-size: 11px;
-
-  color: #929292;
 }
-
 
 
 /* =========================================================
@@ -289,7 +236,6 @@ a {
 ========================================================= */
 
 .dashboard {
-
   max-width: 1380px;
 
   margin: 0 auto;
@@ -298,29 +244,20 @@ a {
 }
 
 
-
-/* =========================================================
-   WELCOME
-========================================================= */
+/* WELCOME */
 
 .welcome {
-
   display: flex;
-
   align-items: flex-end;
-
   justify-content: space-between;
 
   margin-bottom: 32px;
 }
 
-
 .eyebrow {
-
   color: #8b8b8b;
 
   font-size: 11px;
-
   font-weight: 700;
 
   letter-spacing: 1.2px;
@@ -328,21 +265,16 @@ a {
   margin: 0 0 9px;
 }
 
-
 .welcome h1 {
-
   margin: 0;
 
   font-size: 32px;
+  font-weight: 600;
 
   letter-spacing: -1px;
-
-  font-weight: 600;
 }
 
-
 .subtitle {
-
   margin: 9px 0 0;
 
   color: #737373;
@@ -350,13 +282,9 @@ a {
   font-size: 14px;
 }
 
-
 .system-status {
-
   display: flex;
-
   align-items: center;
-
   gap: 8px;
 
   border: 1px solid #e7e7e7;
@@ -366,15 +294,11 @@ a {
   border-radius: 8px;
 
   font-size: 12px;
-
   font-weight: 500;
 }
 
-
 .status-live {
-
   width: 7px;
-
   height: 7px;
 
   border-radius: 50%;
@@ -383,23 +307,18 @@ a {
 }
 
 
-
 /* =========================================================
    ACTIVE EXAM
 ========================================================= */
 
 .active-exam {
-
   display: flex;
-
   align-items: center;
-
   justify-content: space-between;
 
   padding: 23px 25px;
 
   border: 1px solid #e7e7e7;
-
   border-left: 3px solid #ffad1f;
 
   border-radius: 10px;
@@ -409,11 +328,8 @@ a {
   background: #ffffff;
 }
 
-
 .live-label {
-
   display: flex;
-
   align-items: center;
 
   gap: 7px;
@@ -421,7 +337,6 @@ a {
   color: #b57400;
 
   font-size: 10px;
-
   font-weight: 700;
 
   letter-spacing: 0.8px;
@@ -429,11 +344,8 @@ a {
   margin-bottom: 7px;
 }
 
-
 .pulse {
-
   width: 7px;
-
   height: 7px;
 
   background: #ffad1f;
@@ -441,68 +353,51 @@ a {
   border-radius: 50%;
 }
 
-
 .exam-title {
-
   font-size: 16px;
-
   font-weight: 600;
 }
 
-
 .exam-meta {
-
   display: flex;
-
   gap: 8px;
 
-  color: #777;
+  color: #777777;
 
   font-size: 12px;
 
   margin-top: 7px;
 }
 
-
 .monitor-button {
-
   border: 0;
 
   background: #171717;
-
-  color: white;
+  color: #ffffff;
 
   padding: 11px 17px;
 
   border-radius: 7px;
 
   font-size: 12px;
-
   font-weight: 600;
 }
 
-
 .monitor-button:hover {
-
   background: #292929;
 }
 
-
 .monitor-button span {
-
   margin-left: 10px;
-
   color: #ffad1f;
 }
 
 
-
 /* =========================================================
-   STAT CARDS
+   QUICK OVERVIEW CARDS
 ========================================================= */
 
 .stats {
-
   display: grid;
 
   grid-template-columns: repeat(4, 1fr);
@@ -512,23 +407,18 @@ a {
   margin-bottom: 20px;
 }
 
-
 .stat-card {
-
   border: 1px solid #e8e8e8;
 
   border-radius: 10px;
 
   padding: 19px 20px;
 
-  background: white;
+  background: #ffffff;
 }
 
-
 .stat-top {
-
   display: flex;
-
   align-items: center;
 
   gap: 8px;
@@ -538,82 +428,52 @@ a {
   font-size: 12px;
 }
 
-
 .status-dot {
-
   width: 7px;
-
   height: 7px;
 
   border-radius: 50%;
 }
 
-
 .status-dot.neutral {
-
   background: #929292;
 }
 
-
 .status-dot.normal {
-
   background: #36a269;
 }
 
-
 .status-dot.review {
-
   background: #ffad1f;
 }
 
-
 .status-dot.high {
-
   background: #dc4b4b;
 }
 
-
 .stat-value {
+  margin-top: 13px;
 
   font-size: 29px;
-
   font-weight: 600;
-
-  margin-top: 13px;
 
   letter-spacing: -1px;
 }
 
-
 .stat-detail {
-
-  font-size: 11px;
+  margin-top: 3px;
 
   color: #8a8a8a;
 
-  margin-top: 3px;
+  font-size: 11px;
 }
-
 
 
 /* =========================================================
-   MAIN GRID
+   COMMON PANEL
 ========================================================= */
 
-.dashboard-grid {
-
-  display: grid;
-
-  grid-template-columns: 1.65fr 0.85fr;
-
-  gap: 20px;
-
-  margin-bottom: 20px;
-}
-
-
 .panel {
-
   border: 1px solid #e8e8e8;
 
   border-radius: 10px;
@@ -623,31 +483,22 @@ a {
   padding: 22px;
 }
 
-
 .panel-header {
-
   display: flex;
-
   justify-content: space-between;
-
   align-items: flex-start;
 
   margin-bottom: 18px;
 }
 
-
 .panel-header h2 {
-
   margin: 0;
 
   font-size: 15px;
-
   font-weight: 600;
 }
 
-
 .panel-header p {
-
   margin: 5px 0 0;
 
   color: #858585;
@@ -655,192 +506,104 @@ a {
   font-size: 11px;
 }
 
-
 .text-button {
-
-  background: transparent;
-
   border: 0;
 
-  color: #555;
+  background: transparent;
+  color: #555555;
+
+  padding: 0;
 
   font-size: 11px;
-
   font-weight: 600;
 }
 
-
 .text-button:hover {
-
   color: #171717;
 }
 
 
-
 /* =========================================================
-   TODAY'S SCHEDULE
+   DASHBOARD DATE SHEETS
 ========================================================= */
 
-.schedule-list {
+.datesheet-panel {
+  margin-bottom: 20px;
+}
 
+.datesheet-list {
   border-top: 1px solid #eeeeee;
 }
 
-
-.schedule-row {
-
-  display: grid;
-
-  grid-template-columns: 85px 1fr auto;
-
+.datesheet-row {
+  display: flex;
   align-items: center;
 
-  gap: 15px;
+  gap: 13px;
 
-  padding: 16px 0;
+  padding: 15px 0;
 
   border-bottom: 1px solid #eeeeee;
 }
 
-
-.schedule-row:last-child {
-
+.datesheet-row:last-child {
   border-bottom: 0;
 }
 
+.datesheet-icon {
+  width: 32px;
+  height: 32px;
 
-.schedule-time {
-
-  color: #707070;
-
-  font-size: 11px;
-
-  font-weight: 500;
-}
-
-
-.schedule-main {
+  border: 1px solid #e3e3e3;
+  border-radius: 6px;
 
   display: flex;
+  align-items: center;
+  justify-content: center;
 
+  color: #777777;
+
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.datesheet-info {
+  flex: 1;
+
+  display: flex;
   flex-direction: column;
 
   gap: 4px;
 }
 
-
-.schedule-main strong {
-
-  font-size: 12px;
-
+.datesheet-info strong {
+  font-size: 11px;
   font-weight: 600;
 }
 
+.datesheet-info span {
+  color: #888888;
 
-.schedule-main span {
-
-  color: #8b8b8b;
-
-  font-size: 10px;
+  font-size: 9px;
 }
 
+.datesheet-view {
+  border: 1px solid #dddddd;
 
-.schedule-status {
+  background: #ffffff;
+  color: #444444;
 
-  font-size: 10px;
-
-  font-weight: 600;
-
-  white-space: nowrap;
-}
-
-
-.schedule-status.completed {
-
-  color: #31905f;
-}
-
-
-.schedule-status.live {
-
-  color: #c27a00;
-}
-
-
-.schedule-status.upcoming {
-
-  color: #777;
-}
-
-
-.active-row {
-
-  background: #fffaf0;
-
-  margin: 0 -12px;
-
-  padding-left: 12px;
-
-  padding-right: 12px;
+  padding: 8px 11px;
 
   border-radius: 6px;
-}
 
-
-
-/* =========================================================
-   SYSTEM STATUS
-========================================================= */
-
-.healthy-badge {
-
-  font-size: 10px;
-
+  font-size: 9px;
   font-weight: 600;
-
-  color: #278653;
-
-  background: #eef8f2;
-
-  border-radius: 20px;
-
-  padding: 5px 9px;
 }
 
-
-.health-list {
-
-  border-top: 1px solid #eeeeee;
+.datesheet-view:hover {
+  background: #f7f7f7;
 }
-
-
-.health-row {
-
-  display: flex;
-
-  justify-content: space-between;
-
-  padding: 15px 0;
-
-  border-bottom: 1px solid #eeeeee;
-
-  font-size: 12px;
-}
-
-
-.health-row span {
-
-  color: #777;
-}
-
-
-.health-row strong {
-
-  color: #2f9e64;
-
-  font-size: 11px;
-}
-
 
 
 /* =========================================================
@@ -848,21 +611,15 @@ a {
 ========================================================= */
 
 .activity-panel {
-
   margin-bottom: 20px;
 }
 
-
 .activity-list {
-
   border-top: 1px solid #eeeeee;
 }
 
-
 .activity-row {
-
   display: flex;
-
   align-items: center;
 
   gap: 12px;
@@ -872,17 +629,12 @@ a {
   border-bottom: 1px solid #eeeeee;
 }
 
-
 .activity-row:last-child {
-
   border-bottom: 0;
 }
 
-
 .activity-dot {
-
   width: 7px;
-
   height: 7px;
 
   border-radius: 50%;
@@ -890,72 +642,53 @@ a {
   flex-shrink: 0;
 }
 
-
 .activity-dot.live {
-
   background: #ffad1f;
 }
 
-
 .activity-dot.normal {
-
   background: #36a269;
 }
 
-
 .activity-dot.neutral {
-
   background: #9b9b9b;
 }
 
-
 .activity-content {
+  flex: 1;
 
   display: flex;
-
   flex-direction: column;
 
   gap: 3px;
-
-  flex: 1;
 }
 
-
 .activity-content strong {
-
   font-size: 12px;
-
   font-weight: 600;
 }
 
-
 .activity-content span {
-
   color: #858585;
 
   font-size: 10px;
 }
 
-
 .activity-row time {
-
   color: #929292;
 
   font-size: 10px;
 }
 
 
-
 /* =========================================================
-   FLOATING ACTIVE EXAM DOCK
+   FIXED ACTIVE EXAM DOCK
 ========================================================= */
 
 .active-exam-dock {
-
   position: fixed;
 
   left: 50%;
-
   bottom: 22px;
 
   transform: translateX(-50%);
@@ -963,7 +696,6 @@ a {
   z-index: 200;
 
   display: flex;
-
   align-items: center;
 
   gap: 14px;
@@ -973,22 +705,17 @@ a {
   padding: 11px 15px;
 
   background: #191919;
+  color: #ffffff;
 
-  color: white;
-
+  border: 1px solid #303030;
   border-radius: 12px;
 
   box-shadow:
     0 12px 35px rgba(0, 0, 0, 0.18);
-
-  border: 1px solid #303030;
 }
 
-
 .dock-status {
-
   display: flex;
-
   align-items: center;
 
   gap: 6px;
@@ -996,15 +723,11 @@ a {
   color: #ffbd45;
 
   font-size: 10px;
-
   font-weight: 700;
 }
 
-
 .dock-pulse {
-
   width: 7px;
-
   height: 7px;
 
   background: #ffad1f;
@@ -1012,60 +735,42 @@ a {
   border-radius: 50%;
 }
 
-
 .dock-divider {
-
-  height: 23px;
-
   width: 1px;
+  height: 23px;
 
   background: #3a3a3a;
 }
 
-
 .dock-info {
-
   display: flex;
-
   flex-direction: column;
 
   min-width: 260px;
 }
 
-
 .dock-info strong {
-
   font-size: 11px;
 }
 
-
 .dock-info span {
+  margin-top: 3px;
 
   color: #a3a3a3;
 
   font-size: 10px;
-
-  margin-top: 3px;
 }
 
-
-.dock-students {
-
+.dock-students,
+.dock-time {
   color: #bdbdbd;
 
   font-size: 10px;
 }
-
 
 .dock-time {
-
-  color: #bdbdbd;
-
-  font-size: 10px;
-
   margin-left: auto;
 }
-
 
 
 /* =========================================================
@@ -1073,7 +778,6 @@ a {
 ========================================================= */
 
 .footer {
-
   max-width: 1380px;
 
   margin: 0 auto;
@@ -1081,7 +785,6 @@ a {
   padding: 20px 42px 110px;
 
   display: flex;
-
   justify-content: space-between;
 
   color: #9a9a9a;
@@ -1089,6 +792,33 @@ a {
   font-size: 10px;
 }
 
+
+/* =========================================================
+   PLACEHOLDER PAGES
+========================================================= */
+
+.placeholder-page {
+  max-width: 1380px;
+
+  margin: 0 auto;
+
+  padding: 70px 42px 150px;
+}
+
+.placeholder-page h1 {
+  margin: 0;
+
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.placeholder-page p {
+  margin-top: 8px;
+
+  color: #777777;
+
+  font-size: 14px;
+}
 
 
 /* =========================================================
@@ -1109,16 +839,11 @@ a {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-
   .active-exam-dock {
     min-width: auto;
 
     width: calc(100% - 30px);
   }
-
 }
 
 
@@ -1132,7 +857,7 @@ a {
     gap: 12px;
   }
 
-  .nav-links a {
+  .nav-link-button {
     font-size: 11px;
   }
 
@@ -1168,16 +893,6 @@ a {
     gap: 20px;
   }
 
-  .schedule-row {
-    grid-template-columns: 70px 1fr;
-
-    gap: 10px;
-  }
-
-  .schedule-status {
-    grid-column: 2;
-  }
-
   .active-exam-dock {
     bottom: 12px;
 
@@ -1197,5 +912,4 @@ a {
 
     text-overflow: ellipsis;
   }
-
 }
