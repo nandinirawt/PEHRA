@@ -1,3 +1,6 @@
+import PrivacyCenter from "./PrivacyCenter";
+import CameraCalibration from "./CameraCalibration"; 
+import LiveMonitor from "./LiveMonitor";
 import { useState } from "react";
 import Dashboard from "./Dashboard.jsx";
 import Exams from "./Exams.jsx";
@@ -55,7 +58,14 @@ function App() {
           >
             Live Monitor
           </button>
-
+            <button
+  className={`nav-link-button ${
+    page === "calibration" ? "active" : ""
+  }`}
+  onClick={() => setPage("calibration")}
+>
+  Calibration
+</button>
           <button
             className={`nav-link-button ${
               page === "privacy" ? "active" : ""
@@ -112,19 +122,14 @@ function App() {
         <Exams />
       )}
 
-      {page === "live" && (
-        <main className="placeholder-page">
-          <h1>Live Monitor</h1>
-          <p>Live monitoring will be built next.</p>
-        </main>
-      )}
+      {page === "live" && <LiveMonitor />}
+      {page === "calibration" && (
+  <CameraCalibration />
+)}
 
       {page === "privacy" && (
-        <main className="placeholder-page">
-          <h1>Privacy Center</h1>
-          <p>Privacy page will be built next.</p>
-        </main>
-      )}
+  <PrivacyCenter />
+)}
 
     </div>
   );
