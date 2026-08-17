@@ -1,10 +1,21 @@
 import { useState } from "react";
 import Dashboard from "./Dashboard.jsx";
 import Exams from "./Exams.jsx";
+import Login from "./Login.jsx";
 import "./App.css";
 
 function App() {
   const [page, setPage] = useState("dashboard");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Show login page before entering the main application
+  if (!isLoggedIn) {
+    return (
+      <Login
+        onLogin={() => setIsLoggedIn(true)}
+      />
+    );
+  }
 
   return (
     <div className="app">
@@ -12,11 +23,13 @@ function App() {
       {/* =========================
           GLOBAL TOP NAVBAR
       ========================== */}
+
       <header className="navbar">
 
         <div className="brand">
+
           <img
-            src="/pehra-logo.png"
+            src="/pehraa-logo.png"
             alt="PEHRA"
             className="brand-logo"
           />
@@ -24,6 +37,7 @@ function App() {
           <span className="brand-name">
             PEHRA
           </span>
+
         </div>
 
 
@@ -38,6 +52,7 @@ function App() {
             Dashboard
           </button>
 
+
           <button
             className={`nav-link-button ${
               page === "exams" ? "active" : ""
@@ -47,6 +62,7 @@ function App() {
             Exams
           </button>
 
+
           <button
             className={`nav-link-button ${
               page === "live" ? "active" : ""
@@ -55,6 +71,7 @@ function App() {
           >
             Live Monitor
           </button>
+
 
           <button
             className={`nav-link-button ${
@@ -71,15 +88,20 @@ function App() {
         <div className="nav-right">
 
           <button className="notification">
+
             <span className="notification-dot"></span>
+
             ◌
+
           </button>
+
 
           <div className="profile">
 
             <div className="avatar">
               N
             </div>
+
 
             <div className="profile-info">
 
@@ -108,21 +130,38 @@ function App() {
         <Dashboard />
       )}
 
+
       {page === "exams" && (
         <Exams />
       )}
 
+
       {page === "live" && (
         <main className="placeholder-page">
-          <h1>Live Monitor</h1>
-          <p>Live monitoring will be built next.</p>
+
+          <h1>
+            Live Monitor
+          </h1>
+
+          <p>
+            Live monitoring will be built next.
+          </p>
+
         </main>
       )}
 
+
       {page === "privacy" && (
         <main className="placeholder-page">
-          <h1>Privacy Center</h1>
-          <p>Privacy page will be built next.</p>
+
+          <h1>
+            Privacy Center
+          </h1>
+
+          <p>
+            Privacy page will be built next.
+          </p>
+
         </main>
       )}
 
