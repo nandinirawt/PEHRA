@@ -2,6 +2,7 @@ import { useState } from "react";
 import Dashboard from "./Dashboard.jsx";
 import Exams from "./Exams.jsx";
 import Login from "./Login.jsx";
+import ActiveExamDock from "./ActiveExamDock.jsx";
 import "./App.css";
 
 function App() {
@@ -16,6 +17,11 @@ function App() {
       />
     );
   }
+
+  // Open the Live Monitor page
+  const handleOpenMonitor = () => {
+    setPage("live");
+  };
 
   return (
     <div className="app">
@@ -40,6 +46,10 @@ function App() {
 
         </div>
 
+
+        {/* =========================
+            NAVIGATION
+        ========================== */}
 
         <nav className="nav-links">
 
@@ -84,6 +94,10 @@ function App() {
 
         </nav>
 
+
+        {/* =========================
+            RIGHT SIDE
+        ========================== */}
 
         <div className="nav-right">
 
@@ -163,6 +177,18 @@ function App() {
           </p>
 
         </main>
+      )}
+
+
+      {/* =========================
+          GLOBAL ACTIVE EXAM DOCK
+          HIDDEN ON LIVE MONITOR
+      ========================== */}
+
+      {page !== "live" && (
+        <ActiveExamDock
+          onOpenMonitor={handleOpenMonitor}
+        />
       )}
 
     </div>
