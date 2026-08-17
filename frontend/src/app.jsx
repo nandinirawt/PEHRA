@@ -1,8 +1,11 @@
 import { useState } from "react";
+
 import Dashboard from "./Dashboard.jsx";
 import Exams from "./Exams.jsx";
 import Login from "./Login.jsx";
 import ActiveExamDock from "./ActiveExamDock.jsx";
+import Navbar from "./Navbar.jsx";
+
 import "./App.css";
 
 function App() {
@@ -18,7 +21,7 @@ function App() {
     );
   }
 
-  // Open the Live Monitor page
+  // Open Live Monitor from Active Exam Dock
   const handleOpenMonitor = () => {
     setPage("live");
   };
@@ -30,110 +33,10 @@ function App() {
           GLOBAL TOP NAVBAR
       ========================== */}
 
-      <header className="navbar">
-
-        <div className="brand">
-
-          <img
-            src="/pehraa-logo.png"
-            alt="PEHRA"
-            className="brand-logo"
-          />
-
-          <span className="brand-name">
-            PEHRA
-          </span>
-
-        </div>
-
-
-        {/* =========================
-            NAVIGATION
-        ========================== */}
-
-        <nav className="nav-links">
-
-          <button
-            className={`nav-link-button ${
-              page === "dashboard" ? "active" : ""
-            }`}
-            onClick={() => setPage("dashboard")}
-          >
-            Dashboard
-          </button>
-
-
-          <button
-            className={`nav-link-button ${
-              page === "exams" ? "active" : ""
-            }`}
-            onClick={() => setPage("exams")}
-          >
-            Exams
-          </button>
-
-
-          <button
-            className={`nav-link-button ${
-              page === "live" ? "active" : ""
-            }`}
-            onClick={() => setPage("live")}
-          >
-            Live Monitor
-          </button>
-
-
-          <button
-            className={`nav-link-button ${
-              page === "privacy" ? "active" : ""
-            }`}
-            onClick={() => setPage("privacy")}
-          >
-            Privacy
-          </button>
-
-        </nav>
-
-
-        {/* =========================
-            RIGHT SIDE
-        ========================== */}
-
-        <div className="nav-right">
-
-          <button className="notification">
-
-            <span className="notification-dot"></span>
-
-            ◌
-
-          </button>
-
-
-          <div className="profile">
-
-            <div className="avatar">
-              N
-            </div>
-
-
-            <div className="profile-info">
-
-              <span className="profile-name">
-                Nandini
-              </span>
-
-              <span className="profile-role">
-                Invigilator
-              </span>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </header>
+      <Navbar
+        page={page}
+        setPage={setPage}
+      />
 
 
       {/* =========================
