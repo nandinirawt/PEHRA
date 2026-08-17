@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Dashboard from "./Dashboard.jsx";
 import Exams from "./Exams.jsx";
+import ActiveExamDock from "./ActiveExamDock.jsx";
 import "./App.css";
 
 function App() {
@@ -125,6 +126,9 @@ function App() {
           <p>Privacy page will be built next.</p>
         </main>
       )}
+      <ActiveExamDock
+  onMonitor={() => setPage("live")}
+/>
 
     </div>
   );
