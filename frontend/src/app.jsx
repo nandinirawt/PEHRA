@@ -1,6 +1,5 @@
 import PrivacyCenter from "./PrivacyCenter";
-import CameraCalibration from "./CameraCalibration"; 
-import LiveMonitor from "./LiveMonitor";
+import LiveMonitorWorkspace from "./LiveMonitorWorkspace";
 import { useState } from "react";
 import Dashboard from "./Dashboard.jsx";
 import Exams from "./Exams.jsx";
@@ -18,6 +17,7 @@ function App() {
       <header className="navbar">
 
         <div className="brand">
+
           <img
             src="/pehra-logo.png"
             alt="PEHRA"
@@ -27,6 +27,7 @@ function App() {
           <span className="brand-name">
             PEHRA
           </span>
+
         </div>
 
 
@@ -41,6 +42,7 @@ function App() {
             Dashboard
           </button>
 
+
           <button
             className={`nav-link-button ${
               page === "exams" ? "active" : ""
@@ -49,14 +51,7 @@ function App() {
           >
             Exams
           </button>
-          <button
-    className={`nav-link-button ${
-      page === "calibration" ? "active" : ""
-    }`}
-    onClick={() => setPage("calibration")}
-  >
-    Calibration
-  </button>
+
 
           <button
             className={`nav-link-button ${
@@ -66,7 +61,8 @@ function App() {
           >
             Live Monitor
           </button>
-          
+
+
           <button
             className={`nav-link-button ${
               page === "privacy" ? "active" : ""
@@ -85,6 +81,7 @@ function App() {
             <span className="notification-dot"></span>
             ◌
           </button>
+
 
           <div className="profile">
 
@@ -119,18 +116,20 @@ function App() {
         <Dashboard />
       )}
 
+
       {page === "exams" && (
         <Exams />
       )}
 
-      {page === "live" && <LiveMonitor />}
-      {page === "calibration" && (
-  <CameraCalibration />
-)}
+
+      {page === "live" && (
+        <LiveMonitorWorkspace />
+      )}
+
 
       {page === "privacy" && (
-  <PrivacyCenter />
-)}
+        <PrivacyCenter />
+      )}
 
     </div>
   );
