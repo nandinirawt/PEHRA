@@ -6,30 +6,35 @@ import "./App.css";
 
 function App() {
   const [page, setPage] = useState("dashboard");
+  const [activeExamId, setActiveExamId] = useState("exam-001");
+
+  const handleNavigate = (targetPage, examId = null) => {
+    if (examId) {
+      setActiveExamId(examId);
+    }
+    setPage(targetPage);
+  };
 
   return (
     <div className="app">
-
       {/* =========================
           GLOBAL TOP NAVBAR
       ========================== */}
       <header className="navbar">
-
         <div className="brand">
           <img
-            src="/pehra-logo.png"
+            src="/pehraa-logo.png"
             alt="PEHRA"
             className="brand-logo"
+            onError={(e) => {
+              // fallback if file name differs
+              e.currentTarget.src = "/pehra-logo.png";
+            }}
           />
-
-          <span className="brand-name">
-            PEHRA
-          </span>
+          <span className="brand-name">PEHRA</span>
         </div>
 
-
         <nav className="nav-links">
-
           <button
             className={`nav-link-button ${
               page === "dashboard" ? "active" : ""
@@ -65,71 +70,76 @@ function App() {
           >
             Privacy
           </button>
-
         </nav>
 
-
         <div className="nav-right">
-
           <button className="notification">
             <span className="notification-dot"></span>
             ◌
           </button>
 
           <div className="profile">
-
-            <div className="avatar">
-              N
-            </div>
-
+            <div className="avatar">N</div>
             <div className="profile-info">
-
-              <span className="profile-name">
-                Nandini
-              </span>
-
-              <span className="profile-role">
-                Invigilator
-              </span>
-
+              <span className="profile-name">Nandini</span>
+              <span className="profile-role">Invigilator</span>
             </div>
-
           </div>
-
         </div>
-
       </header>
-
 
       {/* =========================
           PAGE CONTENT
       ========================== */}
+      {page === "dashboard" && <Dashboard onNavigate={handleNavigate} />}
 
-      {page === "dashboard" && (
-        <Dashboard />
-      )}
-
-      {page === "exams" && (
-        <Exams />
-      )}
+      {page === "exams" && <Exams onNavigate={handleNavigate} />}
 
       {page === "live" && (
         <main className="placeholder-page">
-          <h1>Live Monitor</h1>
-          <p>Live monitoring will be built next.</p>
+          <div className="placeholder-card">
+            <span className="live-pulse-badge">● LIVE CONTROL ROOM</span>
+            <h1>Live Monitor</h1>
+            <p>
+              Monitoring session for <strong>{activeExamId || "Active Exam"}</strong>.
+            </p>
+            <p className="placeholder-note">
+              Person 3 (Live Monitor Frontend Lead) is wiring the real-time seat matrix, pose
+              keypoints visualization, and human review controls.
+            </p>
+            <button
+              type="button"
+              className="secondary-button"
+              style={{ marginTop: "16px" }}
+              onClick={() => setPage("exams")}
+            >
+              ← Return to Exams Hub
+            </button>
+          </div>
         </main>
       )}
 
       {page === "privacy" && (
         <main className="placeholder-page">
-          <h1>Privacy Center</h1>
-          <p>Privacy page will be built next.</p>
+          <div className="placeholder-card">
+            <h1>Privacy Center</h1>
+            <p>
+              Architecture & telemetry guarantees: Zero face recognition, local edge inference
+              only.
+            </p>
+            <button
+              type="button"
+              className="secondary-button"
+              style={{ marginTop: "16px" }}
+              onClick={() => setPage("dashboard")}
+            >
+              ← Return to Dashboard
+            </button>
+          </div>
         </main>
       )}
-      <ActiveExamDock
-  onMonitor={() => setPage("live")}
-/>
 
+      <ActiveExamDock onMonitor={() => setPage("live")} />
     </div>
   );
 }

@@ -1,0 +1,417 @@
+/* =========================================================
+   SESSION SUMMARY / POST-EXAM REPORT STYLES
+========================================================= */
+
+.session-summary-page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 36px 140px;
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+.summary-top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.summary-nav-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.summary-report-card {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 40px 48px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+/* =========================================================
+   REPORT HEADER
+========================================================= */
+.report-header {
+  border-bottom: 1px solid #eeeeee;
+  padding-bottom: 28px;
+  margin-bottom: 32px;
+}
+
+.report-badge-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.doc-type-badge {
+  font-size: 9px;
+  font-weight: 800;
+  color: #555555;
+  background: #f0f0f0;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.8px;
+}
+
+.report-header h1 {
+  margin: 0 0 8px;
+  font-size: 26px;
+  font-weight: 700;
+  color: #171717;
+  letter-spacing: -0.6px;
+}
+
+.report-subtitle {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: #737373;
+}
+
+.report-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  background: #fafafa;
+  border: 1px solid #eeeeee;
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.meta-item .label {
+  font-size: 10px;
+  color: #888888;
+}
+
+.meta-item strong {
+  font-size: 12px;
+  color: #222222;
+}
+
+/* =========================================================
+   METRICS RIBBON
+========================================================= */
+.summary-metrics-ribbon {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 36px;
+}
+
+.metric-box {
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.metric-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #888888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.metric-value {
+  display: block;
+  font-size: 28px;
+  font-weight: 800;
+  color: #171717;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+
+.metric-sub {
+  font-size: 10px;
+  color: #737373;
+}
+
+.text-accent {
+  color: #ffad1f !important;
+}
+
+/* =========================================================
+   SECTIONS & RISK DISTRIBUTION
+========================================================= */
+.summary-section {
+  margin-bottom: 36px;
+}
+
+.section-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-title-row h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #171717;
+}
+
+.section-hint {
+  font-size: 11px;
+  color: #888888;
+}
+
+.risk-distribution-container {
+  background: #fbfbfb;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 24px;
+}
+
+.risk-bar-track {
+  display: flex;
+  height: 12px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #eeeeee;
+  margin-bottom: 24px;
+}
+
+.risk-bar-fill.normal { background: #10b981; }
+.risk-bar-fill.review { background: #f59e0b; }
+.risk-bar-fill.high { background: #ef4444; }
+
+.risk-breakdown-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.risk-card {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.risk-card.normal { border-left: 3px solid #10b981; }
+.risk-card.review { border-left: 3px solid #f59e0b; }
+.risk-card.high { border-left: 3px solid #ef4444; }
+
+.risk-card .card-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #666666;
+  margin-bottom: 6px;
+}
+
+.risk-card .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.risk-card.normal .dot { background: #10b981; }
+.risk-card.review .dot { background: #f59e0b; }
+.risk-card.high .dot { background: #ef4444; }
+
+.risk-card strong {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  color: #171717;
+  margin-bottom: 4px;
+}
+
+.risk-card p {
+  margin: 0;
+  font-size: 10px;
+  color: #737373;
+}
+
+/* =========================================================
+   AUDIT TABLE
+========================================================= */
+.audit-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+}
+
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.audit-table th {
+  background: #fafafa;
+  color: #666666;
+  font-weight: 600;
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.audit-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333333;
+}
+
+.audit-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.seat-tag {
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.resolution-tag {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.resolution-tag.false-alarm {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.resolution-tag.confirmed {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.font-mono {
+  font-family: monospace;
+}
+
+.notes-col {
+  color: #666666;
+  font-style: italic;
+}
+
+/* =========================================================
+   PRIVACY CERTIFICATE
+========================================================= */
+.certificate-box {
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 24px 28px;
+}
+
+.cert-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.cert-seal {
+  font-size: 28px;
+}
+
+.cert-header h4 {
+  margin: 0 0 2px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #171717;
+}
+
+.cert-header p {
+  margin: 0;
+  font-size: 11px;
+  color: #666666;
+}
+
+.cert-checklist {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px dashed #dcdcdc;
+}
+
+.cert-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #333333;
+}
+
+.cert-check {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #10b981;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.cert-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #888888;
+}
+
+.cert-hash {
+  background: #eeeeee;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  color: #444444;
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+  .summary-top-nav,
+  .navbar,
+  .active-exam-dock {
+    display: none !important;
+  }
+  .session-summary-page {
+    padding: 0 !important;
+  }
+  .summary-report-card {
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+}
+
+@media (max-width: 850px) {
+  .report-meta-grid,
+  .summary-metrics-ribbon,
+  .risk-breakdown-cards,
+  .cert-checklist {
+    grid-template-columns: 1fr;
+  }
+  .summary-report-card {
+    padding: 24px 20px;
+  }
+}

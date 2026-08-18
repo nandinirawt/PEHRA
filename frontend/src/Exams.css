@@ -5,10 +5,14 @@
 .exams-page {
   max-width: 1380px;
   margin: 0 auto;
-
   padding: 48px 42px 150px;
+  animation: fadeIn 0.25s ease-in-out;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 /* =========================================================
    HEADER
@@ -18,49 +22,45 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-
   margin-bottom: 32px;
 }
 
 .exams-header h1 {
   margin: 0;
-
   color: #171717;
-
   font-size: 32px;
   font-weight: 600;
-
   letter-spacing: -1px;
 }
 
 .exams-subtitle {
   margin: 8px 0 0;
-
   color: #737373;
-
   font-size: 14px;
+}
+
+.header-actions-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .create-exam-button {
   border: 0;
-
   background: #171717;
   color: #ffffff;
-
   border-radius: 7px;
-
-  padding: 11px 16px;
-
+  padding: 11px 18px;
   font-size: 12px;
   font-weight: 600;
-
-  transition: background 0.2s ease;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .create-exam-button:hover {
   background: #2b2b2b;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
-
 
 /* =========================================================
    OVERVIEW CARDS
@@ -68,45 +68,33 @@
 
 .exam-overview {
   display: grid;
-
   grid-template-columns: repeat(4, 1fr);
-
   gap: 16px;
-
   margin-bottom: 25px;
 }
 
 .overview-card {
   border: 1px solid #e8e8e8;
-
   border-radius: 10px;
-
   padding: 18px 20px;
-
   background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
 }
 
 .overview-card span {
   display: block;
-
   color: #777777;
-
   font-size: 11px;
-
   margin-bottom: 9px;
 }
 
 .overview-card strong {
   display: block;
-
   color: #171717;
-
   font-size: 27px;
   font-weight: 600;
-
   letter-spacing: -0.7px;
 }
-
 
 /* =========================================================
    TOOLBAR
@@ -114,88 +102,81 @@
 
 .exam-toolbar {
   display: flex;
-
   align-items: center;
   justify-content: space-between;
-
   gap: 20px;
-
   margin-bottom: 20px;
-
   padding-bottom: 14px;
-
   border-bottom: 1px solid #e8e8e8;
 }
-
 
 /* TABS */
 
 .exam-tabs {
   display: flex;
-
-  gap: 5px;
+  gap: 6px;
 }
 
 .exam-tab {
   border: 0;
-
   background: transparent;
-
   color: #777777;
-
   padding: 8px 12px;
-
   border-radius: 6px;
-
   font-size: 11px;
   font-weight: 500;
-
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
 }
 
 .exam-tab:hover {
   background: #f5f5f5;
-
   color: #171717;
 }
 
 .exam-tab.active {
   background: #171717;
-
   color: #ffffff;
 }
 
+.tab-count {
+  font-size: 9px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.08);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.exam-tab.active .tab-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
 
 /* SEARCH / FILTER */
 
 .toolbar-actions {
   display: flex;
-
   align-items: center;
-
   gap: 9px;
 }
 
 .search-input,
 .hall-filter {
   height: 36px;
-
   border: 1px solid #dddddd;
-
   border-radius: 7px;
-
   background: #ffffff;
-
   color: #444444;
-
   font-size: 11px;
-
   outline: none;
+  transition: border-color 0.15s ease;
 }
 
 .search-input {
   width: 220px;
-
   padding: 0 12px;
 }
 
@@ -205,13 +186,13 @@
 
 .search-input:focus,
 .hall-filter:focus {
-  border-color: #b8b8b8;
+  border-color: #171717;
 }
 
 .hall-filter {
-  padding: 0 30px 0 10px;
+  padding: 0 20px 0 10px;
+  cursor: pointer;
 }
-
 
 /* =========================================================
    EXAM LIST
@@ -219,12 +200,9 @@
 
 .exams-list {
   display: grid;
-
   grid-template-columns: repeat(2, minmax(0, 1fr));
-
   gap: 18px;
 }
-
 
 /* =========================================================
    EXAM CARD
@@ -232,23 +210,15 @@
 
 .exam-card {
   background: #ffffff;
-
   border: 1px solid #e7e7e7;
-
   border-radius: 10px;
-
   padding: 22px;
-
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .exam-card:hover {
   border-color: #d6d6d6;
-
-  box-shadow:
-    0 6px 18px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
 }
 
 .exam-card.upcoming {
@@ -256,110 +226,84 @@
 }
 
 .exam-card.live {
-  border-left: 3px solid #ffad1f;
+  border-left: 3px solid #d97706;
 }
 
 .exam-card.completed {
-  border-left: 3px solid #54a875;
+  border-left: 3px solid #10b981;
 }
 
 .exam-card.draft {
   border-left: 3px solid #969696;
 }
 
-
 /* CARD HEADER */
 
 .exam-card-top {
   display: flex;
-
   align-items: flex-start;
   justify-content: space-between;
-
   gap: 20px;
-
   margin-bottom: 20px;
 }
 
 .exam-subject {
   margin-bottom: 6px;
-
   color: #999999;
-
   font-size: 10px;
   font-weight: 700;
-
   letter-spacing: 0.8px;
-
   text-transform: uppercase;
 }
 
 .exam-card h3 {
   max-width: 450px;
-
   margin: 0;
-
   color: #171717;
-
   font-size: 15px;
   font-weight: 600;
-
   line-height: 1.35;
 }
-
 
 /* STATUS */
 
 .exam-status {
   display: inline-flex;
-
   align-items: center;
-
   gap: 6px;
-
-  padding: 6px 9px;
-
+  padding: 6px 10px;
   border-radius: 20px;
-
   font-size: 10px;
   font-weight: 600;
-
   white-space: nowrap;
 }
 
 .exam-status.upcoming {
   background: #fff7e5;
-
   color: #8a5b00;
 }
 
 .exam-status.live {
   background: #fff3d2;
-
   color: #9a6500;
 }
 
 .exam-status.completed {
   background: #edf8f1;
-
   color: #2a7c51;
 }
 
 .exam-status.draft {
   background: #f3f3f3;
-
   color: #666666;
 }
 
 .status-indicator {
   width: 6px;
   height: 6px;
-
   border-radius: 50%;
-
   background: currentColor;
 }
-
 
 /* =========================================================
    EXAM DETAILS
@@ -367,38 +311,29 @@
 
 .exam-details {
   display: grid;
-
   grid-template-columns: repeat(4, 1fr);
-
   gap: 15px;
-
   padding: 15px 0;
-
   border-top: 1px solid #eeeeee;
   border-bottom: 1px solid #eeeeee;
 }
 
 .detail {
   display: flex;
-
   flex-direction: column;
-
   gap: 5px;
 }
 
 .detail-label {
   color: #919191;
-
   font-size: 10px;
 }
 
 .detail strong {
   color: #383838;
-
   font-size: 11px;
   font-weight: 600;
 }
-
 
 /* =========================================================
    UPCOMING EXAM
@@ -406,18 +341,18 @@
 
 .preparation-summary {
   display: flex;
-
   flex-wrap: wrap;
-
+  align-items: center;
   gap: 9px 15px;
-
   padding: 14px 0;
-
   color: #777777;
-
   font-size: 10px;
 }
 
+.text-ready {
+  color: #10b981;
+  font-weight: 700;
+}
 
 /* =========================================================
    LIVE EXAM
@@ -425,34 +360,26 @@
 
 .live-summary {
   display: grid;
-
   grid-template-columns: repeat(3, 1fr);
-
   gap: 10px;
-
   padding: 14px 0;
 }
 
 .live-summary > div {
   display: flex;
-
   flex-direction: column;
-
   gap: 4px;
 }
 
 .live-summary span {
   color: #929292;
-
   font-size: 9px;
 }
 
 .live-summary strong {
   color: #a16800;
-
   font-size: 11px;
 }
-
 
 /* =========================================================
    COMPLETED EXAM
@@ -460,34 +387,26 @@
 
 .completed-summary {
   display: grid;
-
   grid-template-columns: repeat(3, 1fr);
-
   gap: 10px;
-
   padding: 14px 0;
 }
 
 .completed-summary > div {
   display: flex;
-
   flex-direction: column;
-
   gap: 4px;
 }
 
 .completed-summary span {
   color: #929292;
-
   font-size: 9px;
 }
 
 .completed-summary strong {
   color: #333333;
-
   font-size: 11px;
 }
-
 
 /* =========================================================
    DRAFT / PREPARATION
@@ -499,13 +418,9 @@
 
 .progress-header {
   display: flex;
-
   justify-content: space-between;
-
   margin-bottom: 7px;
-
   color: #777777;
-
   font-size: 10px;
 }
 
@@ -516,34 +431,24 @@
 .progress-track {
   width: 100%;
   height: 5px;
-
   overflow: hidden;
-
   border-radius: 20px;
-
   background: #eeeeee;
 }
 
 .progress-fill {
   height: 100%;
-
   border-radius: inherit;
-
   background: #ffad1f;
 }
 
 .progress-steps {
   display: flex;
-
   gap: 14px;
-
   margin-top: 9px;
-
   color: #777777;
-
   font-size: 9px;
 }
-
 
 /* =========================================================
    CARD ACTIONS
@@ -551,31 +456,24 @@
 
 .exam-card-actions {
   display: flex;
-
   justify-content: flex-end;
-
   gap: 8px;
-
   margin-top: 15px;
 }
 
 .primary-button,
 .secondary-button {
   border-radius: 7px;
-
-  padding: 9px 13px;
-
+  padding: 9px 14px;
   font-size: 10px;
   font-weight: 600;
-
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .primary-button {
   border: 0;
-
   background: #171717;
-
   color: #ffffff;
 }
 
@@ -585,122 +483,121 @@
 
 .secondary-button {
   border: 1px solid #dddddd;
-
   background: #ffffff;
-
   color: #444444;
 }
 
 .secondary-button:hover {
   background: #f7f7f7;
+  border-color: #c5c5c5;
 }
 
 .wide-button {
   width: 100%;
 }
 
-
 /* =========================================================
-   EMPTY STATE
+   EMPTY STATE & FOOTER
 ========================================================= */
 
 .empty-state {
   grid-column: 1 / -1;
-
   text-align: center;
-
   padding: 80px 20px;
-
   border: 1px dashed #dcdcdc;
-
   border-radius: 10px;
-
   background: #ffffff;
 }
 
 .empty-icon {
   margin-bottom: 10px;
-
   color: #999999;
-
   font-size: 24px;
 }
 
 .empty-state h3 {
   margin: 0 0 6px;
-
   color: #333333;
-
   font-size: 14px;
 }
 
 .empty-state p {
   margin: 0;
-
   color: #888888;
-
   font-size: 11px;
 }
 
+.exams-catalog-footer {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px dashed #e0e0e0;
+}
+
+.footer-reset-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #888888;
+}
+
+.btn-reset-demo {
+  border: 1px solid #e0e0e0;
+  background: transparent;
+  color: #777777;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.btn-reset-demo:hover {
+  background: #f0f0f0;
+  color: #333333;
+}
 
 /* =========================================================
    RESPONSIVE
 ========================================================= */
 
 @media (max-width: 1000px) {
-
   .exams-list {
     grid-template-columns: 1fr;
   }
-
   .exam-overview {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-
 @media (max-width: 750px) {
-
   .exams-page {
     padding: 30px 18px 140px;
   }
-
   .exams-header {
     align-items: flex-start;
-
     flex-direction: column;
-
     gap: 18px;
   }
-
   .exam-toolbar {
     align-items: stretch;
-
     flex-direction: column;
   }
-
   .toolbar-actions {
     width: 100%;
   }
-
   .search-input {
     flex: 1;
-
     width: auto;
   }
-
   .exam-tabs {
     overflow-x: auto;
   }
-
   .exam-details {
     grid-template-columns: repeat(2, 1fr);
   }
-
   .exam-card-top {
     flex-direction: column;
   }
-
   .exam-status {
     width: fit-content;
   }
