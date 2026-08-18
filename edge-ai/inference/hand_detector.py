@@ -3,10 +3,10 @@ import mediapipe as mp
 import time
 
 
-MODEL_PATH = "models/pose_landmarker.task"
+MODEL_PATH = "models/hand_landmarker.task"
 
 
-def start_pose_detection():
+def start_hand_detection():
     camera = cv2.VideoCapture(0)
 
     if not camera.isOpened():
@@ -14,24 +14,24 @@ def start_pose_detection():
         return
 
     BaseOptions = mp.tasks.BaseOptions
-    PoseLandmarker = mp.tasks.vision.PoseLandmarker
-    PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
+    HandLandmarker = mp.tasks.vision.HandLandmarker
+    HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
     RunningMode = mp.tasks.vision.RunningMode
 
-    options = PoseLandmarkerOptions(
+    options = HandLandmarkerOptions(
         base_options=BaseOptions(
             model_asset_path=MODEL_PATH
         ),
         running_mode=RunningMode.VIDEO,
-        num_poses=1,
-        min_pose_detection_confidence=0.5,
-        min_pose_presence_confidence=0.5,
+        num_hands=2,
+        min_hand_detection_confidence=0.5,
+        min_hand_presence_confidence=0.5,
         min_tracking_confidence=0.5
     )
 
-    print("Pose detection started. Press Q to close.")
+    print("Hand detection started. Press Q to close.")
 
-    with PoseLandmarker.create_from_options(options) as detector:
+    with HandLandmarker.create_from_options(options) as detector:
 
         start_time = time.time()
 
@@ -41,36 +41,39 @@ def start_pose_detection():
             if not success:
                 print("Error: Could not read frame.")
                 break
+
+            # Mirror the webcam
             frame = cv2.flip(frame, 1)
-            # OpenCV frame: BGR -> RGB
+
+            # Convert BGR to RGB
             rgb_frame = cv2.cvtColor(
                 frame,
                 cv2.COLOR_BGR2RGB
             )
 
-            # Convert frame into MediaPipe Image
+            # Convert to MediaPipe Image
             mp_image = mp.Image(
                 image_format=mp.ImageFormat.SRGB,
                 data=rgb_frame
             )
 
-            # Timestamp must increase for VIDEO mode
+            # Increasing timestamp for VIDEO mode
             timestamp_ms = int(
                 (time.time() - start_time) * 1000
             )
 
-            # Detect pose landmarks
+            # Detect hands
             result = detector.detect_for_video(
                 mp_image,
                 timestamp_ms
             )
 
-            # Draw detected landmarks
-            if result.pose_landmarks:
+            # Draw hand landmarks
+            if result.hand_landmarks:
                 height, width, _ = frame.shape
 
-                for pose_landmarks in result.pose_landmarks:
-                    for landmark in pose_landmarks:
+                for hand_landmarks in result.hand_landmarks:
+                    for landmark in hand_landmarks:
 
                         x = int(landmark.x * width)
                         y = int(landmark.y * height)
@@ -84,7 +87,7 @@ def start_pose_detection():
                         )
 
             cv2.imshow(
-                "PEHRA Edge AI - Pose Detection",
+                "PEHRA Edge AI - Hand Detection",
                 frame
             )
 
@@ -97,4 +100,4 @@ def start_pose_detection():
 
 
 if __name__ == "__main__":
-    start_pose_detection()
+    start_hand_detection()
