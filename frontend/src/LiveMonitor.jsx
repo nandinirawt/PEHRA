@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
 import "./LiveMonitor.css";
-// ============================================================
-// V2 BACKEND CONFIGURATION
-// ============================================================
-
 const API_BASE_URL = "http://localhost:8000";
 const EXAM_ID = "EXAM-101";
 /*
@@ -817,8 +813,11 @@ const poseData = [
 /* ============================================================
    HELPER FUNCTIONS
    ============================================================ */
-
-const getRiskState = (seatId, overrides = {}) => {
+const getRiskState = (
+  seatId,
+  overrides = {},
+  backendStates = []
+) => {
   if (overrides[seatId]?.status) {
     return {
       seat_id: seatId,
@@ -828,6 +827,13 @@ const getRiskState = (seatId, overrides = {}) => {
       updated_at: new Date().toISOString(),
     };
   }
+  const backendState = backendStates.find(
+  (item) => item.seat_id === seatId
+);
+
+if (backendState) {
+  return backendState;
+}
 
   const state = riskStates.find(
     (item) => item.seat_id === seatId
@@ -881,8 +887,16 @@ const getUiStatus = (status) => {
 };
 
 
-const getSeatStatus = (seatId, overrides = {}) => {
-  const riskState = getRiskState(seatId, overrides);
+const getSeatStatus = (
+  seatId,
+  overrides = {},
+  backendStates = []
+) => {
+  const riskState = getRiskState(
+    seatId,
+    overrides,
+    backendStates
+  );
 
   return getUiStatus(riskState.status);
 };
@@ -900,115 +914,6 @@ const getSeatEvents = (seatId) => {
    ============================================================ */
 
 function LiveMonitor() {
-
-    // ============================================================
-  // V2 — BACKEND SEAT STATE
-  // ============================================================
-
-  const [backendSeats, setBackendSeats] = useState([]);
-  const [backendLoading, setBackendLoading] = useState(true);
-  const [backendError, setBackendError] = useState("");
-  const [seatOverrides, setSeatOverrides] = useState({});
-
-  /*
-   * ==========================================================
-   * EXAM CONFIGURATION
-   * ==========================================================
-   *
-   * Exam Setup is the single source of truth for:
-   * - exam name
-   * - exam code
-   * - hall number
-   * - total seats
-   *
-   * The hall layout itself continues to come from
-   * pehraHallConfig, which is already used below.
-   */
-
-  const [examConfig, setExamConfig] = useState(() => {
-
-    try {
-
-      const saved =
-        localStorage.getItem(
-          "pehraExamConfig"
-        );
-
-      if (saved) {
-        return JSON.parse(saved);
-      }
-
-    } catch (error) {
-
-      console.error(
-        "Unable to load PEHRA exam configuration:",
-        error
-      );
-
-    }
-
-    return {
-      examName: exam.name,
-      examCode: exam.exam_id,
-      hallNumber: exam.hall_id,
-      totalSeats: 0,
-    };
-
-  });
-
-
-  useEffect(() => {
-
-    const loadExamConfiguration = () => {
-
-      try {
-
-        const saved =
-          localStorage.getItem(
-            "pehraExamConfig"
-          );
-
-        if (saved) {
-
-          const parsed =
-            JSON.parse(saved);
-
-          setExamConfig(parsed);
-
-        }
-
-      } catch (error) {
-
-        console.error(
-          "Unable to reload PEHRA exam configuration:",
-          error
-        );
-
-      }
-
-    };
-
-
-    loadExamConfiguration();
-
-
-    window.addEventListener(
-      "storage",
-      loadExamConfiguration
-    );
-
-
-    return () => {
-
-      window.removeEventListener(
-        "storage",
-        loadExamConfiguration
-      );
-
-    };
-
-  }, []);
-
 
   const [hallConfig, setHallConfig] = useState(() => {
 
@@ -1042,18 +947,7 @@ function LiveMonitor() {
   });
 
 
-  const configuredSeats = hallConfig.seats || defaultSeats;
-
-const seats = configuredSeats.map((seat) => {
-  const backendSeat = backendSeats.find(
-    (item) => item.seat_id === seat.seat_id
-  );
-
-  return {
-    ...seat,
-    status: backendSeat?.status || seat.status || "normal",
-  };
-});
+  const seats = hallConfig.seats || defaultSeats;
 
 
   const calibration = {
@@ -1117,51 +1011,6 @@ const seats = configuredSeats.map((seat) => {
   };
 
 }, []);
-// ============================================================
-// V2 — LOAD SEATS FROM BACKEND
-// ============================================================
-
-useEffect(() => {
-  const loadBackendSeats = async () => {
-    try {
-      setBackendLoading(true);
-      setBackendError("");
-
-      const response = await fetch(
-        `${API_BASE_URL}/api/exams/${EXAM_ID}/seats`
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `Seat API returned ${response.status}`
-        );
-      }
-
-      const data = await response.json();
-
-      if (!Array.isArray(data)) {
-        throw new Error("Invalid seat data received from backend");
-      }
-
-      setBackendSeats(data);
-
-    } catch (error) {
-      console.error(
-        "Unable to load seats from PEHRA backend:",
-        error
-      );
-
-      setBackendError(
-        "Unable to connect to monitoring backend."
-      );
-
-    } finally {
-      setBackendLoading(false);
-    }
-  };
-
-  loadBackendSeats();
-}, []);
 useEffect(() => {
 
   const seatExists = seats.some(
@@ -1182,12 +1031,135 @@ useEffect(() => {
    * Local invigilator changes.
    * These are temporary frontend actions for Version 1.
    */
-  
-  
-
+  const [seatOverrides, setSeatOverrides] = useState({});
+const [backendRiskStates, setBackendRiskStates] = useState([]);
   const [actionMessage, setActionMessage] = useState("");
+/* ==========================================================
+   V2 — LOAD BACKEND RISK STATES
+   ========================================================== */
+
+useEffect(() => {
+
+  const loadBackendRiskStates = async () => {
+    try {
+
+      /* ------------------------------------------------------
+         STEP 1:
+         Get the current backend seat states.
+         This tells us which seats actually have risk.
+         ------------------------------------------------------ */
+
+      const seatsResponse = await fetch(
+        `${API_BASE_URL}/api/exams/${EXAM_ID}/seats`
+      );
+
+      if (!seatsResponse.ok) {
+        console.warn(
+          `Seat API returned ${seatsResponse.status}`
+        );
+
+        setBackendRiskStates([]);
+        return;
+      }
+
+      const backendSeats = await seatsResponse.json();
+
+      console.log(
+        "PEHRA backend seats:",
+        backendSeats
+      );
 
 
+      /* ------------------------------------------------------
+         STEP 2:
+         Only request detailed risk information for seats
+         that are already flagged by the backend.
+         ------------------------------------------------------ */
+
+      const flaggedBackendSeats = backendSeats.filter(
+        (seat) => {
+
+          const status = String(
+            seat.status || ""
+          ).toLowerCase();
+
+          return (
+            status === "high_risk" ||
+            status === "under_review" ||
+            status === "high-risk" ||
+            status === "under-review"
+          );
+        }
+      );
+
+
+      /* ------------------------------------------------------
+         STEP 3:
+         Fetch detailed risk information only for flagged seats.
+         Normal seats will never generate a 404 request.
+         ------------------------------------------------------ */
+
+      const results = [];
+
+      for (const seat of flaggedBackendSeats) {
+
+        try {
+
+          const response = await fetch(
+            `${API_BASE_URL}/api/exams/${EXAM_ID}/risk/${seat.seat_id}`
+          );
+
+          if (!response.ok) {
+
+            console.warn(
+              `Risk API returned ${response.status} for ${seat.seat_id}`
+            );
+
+            continue;
+          }
+
+          const risk = await response.json();
+
+          results.push(risk);
+
+        } catch (error) {
+
+          console.warn(
+            `Unable to load risk for ${seat.seat_id}:`,
+            error
+          );
+
+        }
+      }
+
+
+      /* ------------------------------------------------------
+         STEP 4:
+         Store backend risk states.
+         ------------------------------------------------------ */
+
+      console.log(
+        "PEHRA backend risk states:",
+        results
+      );
+
+      setBackendRiskStates(results);
+
+    } catch (error) {
+
+      console.error(
+        "Unable to load backend risk states:",
+        error
+      );
+
+      setBackendRiskStates([]);
+    }
+  };
+
+
+  loadBackendRiskStates();
+
+}, []);
   /* ==========================================================
      ACTION HANDLER
      ========================================================== */
@@ -1232,9 +1204,17 @@ useEffect(() => {
         [selectedSeat]: {
           status: "under_review",
           risk_score:
-            getRiskState(selectedSeat, previous).risk_score,
+            getRiskState(
+  selectedSeat,
+  previous,
+  backendRiskStates
+).risk_score,
           confidence:
-            getRiskState(selectedSeat, previous).confidence,
+            getRiskState(
+  selectedSeat,
+  previous,
+  backendRiskStates
+).confidence,
         },
       }));
 
@@ -1248,11 +1228,11 @@ useEffect(() => {
   /* ==========================================================
      SELECTED SEAT DATA
      ========================================================== */
-
-  const selectedRiskState = getRiskState(
-    selectedSeat,
-    seatOverrides
-  );
+const selectedRiskState = getRiskState(
+  selectedSeat,
+  seatOverrides,
+  backendRiskStates
+);
 
   const selectedStatus = getUiStatus(
     selectedRiskState.status
@@ -1265,19 +1245,30 @@ useEffect(() => {
      FLAGGED SEATS
      ========================================================== */
 
-  const activeFlaggedSeatIds = riskStates
-    .filter((risk) => {
-      const state = getRiskState(
-        risk.seat_id,
-        seatOverrides
-      );
+  const activeFlaggedSeatIds = Array.from(
+  new Set([
+    ...riskStates.map(
+      (risk) => risk.seat_id
+    ),
 
-      return (
-        state.status === "under_review" ||
-        state.status === "high_risk"
-      );
-    })
-    .map((risk) => risk.seat_id);
+    ...backendRiskStates.map(
+      (risk) => risk.seat_id
+    ),
+  ])
+).filter((seatId) => {
+
+  const state = getRiskState(
+    seatId,
+    seatOverrides,
+    backendRiskStates
+  );
+
+  return (
+    state.status === "under_review" ||
+    state.status === "high_risk"
+  );
+
+});
 
 
   /* ==========================================================
@@ -1286,9 +1277,10 @@ useEffect(() => {
 
   const highRiskCount = seats.filter((seat) => {
     const state = getRiskState(
-      seat.seat_id,
-      seatOverrides
-    );
+  seat.seat_id,
+  seatOverrides,
+  backendRiskStates
+);
 
     return state.status === "high_risk";
   }).length;
@@ -1297,7 +1289,8 @@ useEffect(() => {
   const reviewCount = seats.filter((seat) => {
     const state = getRiskState(
       seat.seat_id,
-      seatOverrides
+      seatOverrides,
+      backendRiskStates
     );
 
     return state.status === "under_review";
@@ -1307,7 +1300,8 @@ useEffect(() => {
   const absentCount = seats.filter((seat) => {
     const state = getRiskState(
       seat.seat_id,
-      seatOverrides
+      seatOverrides,
+      backendRiskStates
     );
 
     return state.status === "absent";
@@ -1343,25 +1337,17 @@ useEffect(() => {
 
 
           <h1>
-            {examConfig.examName || exam.name}
+            {exam.name} — {exam.subject}
           </h1>
 
 
           <div className="exam-meta">
 
-            <span>
-              {examConfig.examCode || exam.exam_id}
-            </span>
+            <span>Hall A</span>
 
             <span>•</span>
 
-            <span>
-              {examConfig.hallNumber || exam.hall_id}
-            </span>
-
-            <span>•</span>
-
-            <span>{seats.length} Seats</span>
+           <span>{seats.length} Seats</span>
 
             <span>•</span>
 
@@ -1460,7 +1446,7 @@ useEffect(() => {
               </h2>
 
               <p>
-                {examConfig.hallNumber || exam.hall_id} · Current seating status
+                Hall A · Current seating status
               </p>
 
             </div>
@@ -1550,7 +1536,8 @@ useEffect(() => {
             const status =
               getSeatStatus(
                 seatId,
-                seatOverrides
+                seatOverrides,
+                backendRiskStates
               );
 
 
@@ -1671,7 +1658,8 @@ useEffect(() => {
                   const risk =
                     getRiskState(
                       seatId,
-                      seatOverrides
+                      seatOverrides,
+                      backendRiskStates
                     );
 
 
