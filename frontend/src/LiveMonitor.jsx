@@ -901,6 +901,15 @@ const getSeatEvents = (seatId) => {
 
 function LiveMonitor() {
 
+    // ============================================================
+  // V2 — BACKEND SEAT STATE
+  // ============================================================
+
+  const [backendSeats, setBackendSeats] = useState([]);
+  const [backendLoading, setBackendLoading] = useState(true);
+  const [backendError, setBackendError] = useState("");
+  const [seatOverrides, setSeatOverrides] = useState({});
+
   /*
    * ==========================================================
    * EXAM CONFIGURATION
@@ -1173,14 +1182,7 @@ useEffect(() => {
    * Local invigilator changes.
    * These are temporary frontend actions for Version 1.
    */
-  // ============================================================
-// V2 — BACKEND SEAT STATE
-// ============================================================
-
-const [backendSeats, setBackendSeats] = useState([]);
-const [backendLoading, setBackendLoading] = useState(true);
-const [backendError, setBackendError] = useState("");
-  const [seatOverrides, setSeatOverrides] = useState({});
+  
   
 
   const [actionMessage, setActionMessage] = useState("");
