@@ -49,6 +49,14 @@ function App() {
           >
             Exams
           </button>
+          <button
+    className={`nav-link-button ${
+      page === "calibration" ? "active" : ""
+    }`}
+    onClick={() => setPage("calibration")}
+  >
+    Calibration
+  </button>
 
           <button
             className={`nav-link-button ${
@@ -58,14 +66,7 @@ function App() {
           >
             Live Monitor
           </button>
-            <button
-  className={`nav-link-button ${
-    page === "calibration" ? "active" : ""
-  }`}
-  onClick={() => setPage("calibration")}
->
-  Calibration
-</button>
+          
           <button
             className={`nav-link-button ${
               page === "privacy" ? "active" : ""
