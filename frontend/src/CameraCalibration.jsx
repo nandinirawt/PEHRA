@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./CameraCalibration.css";
 
 /*
@@ -7,35 +7,32 @@ import "./CameraCalibration.css";
  * VERSION 1
  * ============================================================
  *
- * Frontend mock implementation.
+ * Camera Calibration receives the hall configuration from
+ * Exam Setup.
  *
- * CALIBRATION contract:
+ * Exam Setup owns:
+ * - number of rows
+ * - seats per row
+ * - total seats
+ * - hall information
  *
- * {
- *   camera_id,
- *   zone,
- *   seat_ids,
- *   coverage,
- *   status
- * }
+ * Camera Calibration owns:
+ * - camera selection
+ * - camera → seat mapping
+ * - coverage
+ * - calibration status
  *
- * SEAT shape used for generated layout:
+ * V1:
+ * - No real camera/CV connection
+ * - Configuration is shared through localStorage
  *
- * {
- *   seat_id,
- *   row,
- *   column,
- *   status
- * }
- *
- * No real camera/CV connection in Version 1.
  * ============================================================
  */
 
 
 /* ============================================================
    MOCK CAMERA DATA
-   ============================================================ */
+============================================================ */
 
 const cameras = [
   {
@@ -59,7 +56,7 @@ const cameras = [
 
 /* ============================================================
    CREATE ROW LABEL
-   ============================================================ */
+============================================================ */
 
 const getRowLabel = (index) => {
   let label = "";
@@ -67,7 +64,12 @@ const getRowLabel = (index) => {
 
   while (number > 0) {
     number--;
-    label = String.fromCharCode(65 + (number % 26)) + label;
+
+    label =
+      String.fromCharCode(
+        65 + (number % 26)
+      ) + label;
+
     number = Math.floor(number / 26);
   }
 
@@ -77,21 +79,46 @@ const getRowLabel = (index) => {
 
 /* ============================================================
    GENERATE SEATS
-   ============================================================ */
+============================================================ */
 
-const generateSeats = (totalSeats, columnsPerRow) => {
+const generateSeats = (
+  totalSeats,
+  columnsPerRow
+) => {
   const seats = [];
 
-  for (let index = 0; index < totalSeats; index++) {
-    const rowIndex = Math.floor(index / columnsPerRow);
-    const column = (index % columnsPerRow) + 1;
+  if (
+    totalSeats <= 0 ||
+    columnsPerRow <= 0
+  ) {
+    return seats;
+  }
 
-    const row = getRowLabel(rowIndex);
+  for (
+    let index = 0;
+    index < totalSeats;
+    index++
+  ) {
+
+    const rowIndex =
+      Math.floor(
+        index / columnsPerRow
+      );
+
+    const column =
+      (index % columnsPerRow) + 1;
+
+    const row =
+      getRowLabel(rowIndex);
 
     seats.push({
-      seat_id: `${row}-${String(column).padStart(2, "0")}`,
+      seat_id:
+        `${row}-${String(column).padStart(2, "0")}`,
+
       row,
+
       column,
+
       status: "normal",
     });
   }
@@ -101,55 +128,41 @@ const generateSeats = (totalSeats, columnsPerRow) => {
 
 
 /* ============================================================
-   INITIAL HALL
-   ============================================================ */
-
-const initialSeats = generateSeats(72, 6);
-
-
-/* ============================================================
    COMPONENT
-   ============================================================ */
+============================================================ */
 
-function CameraCalibration() {
+function CameraCalibration({ onProceedToPreCheck }) {
+
+  /* ==========================================================
+     EXAM CONFIGURATION FROM EXAM SETUP
+  ========================================================== */
+
+  const [examConfig, setExamConfig] =
+    useState(null);
+
+
+  /* ==========================================================
+     CAMERA
+  ========================================================== */
 
   const [selectedCamera, setSelectedCamera] =
     useState(cameras[0]);
 
 
   /* ==========================================================
-     HALL CONFIGURATION
-     ========================================================== */
-
-  const [totalSeatsInput, setTotalSeatsInput] =
-    useState("72");
-
-  const [columnsInput, setColumnsInput] =
-    useState("6");
-
-
-  const [totalSeats, setTotalSeats] =
-    useState(72);
-
-  const [columnsPerRow, setColumnsPerRow] =
-    useState(6);
-
+     SEATS
+  ========================================================== */
 
   const [allSeats, setAllSeats] =
-    useState(initialSeats);
-
-
-  /* ==========================================================
-     MAPPING
-     ========================================================== */
+    useState([]);
 
   const [mappedSeats, setMappedSeats] =
-    useState(initialSeats.map((seat) => seat.seat_id));
+    useState([]);
 
 
   /* ==========================================================
      UI STATE
-     ========================================================== */
+  ========================================================== */
 
   const [actionMessage, setActionMessage] =
     useState("");
@@ -159,34 +172,147 @@ function CameraCalibration() {
 
 
   /* ==========================================================
-     CALCULATED ROWS
-     ========================================================== */
+     LOAD EXAM CONFIGURATION
+  ========================================================== */
 
-  const rows = useMemo(() => {
-    return Math.ceil(totalSeats / columnsPerRow);
-  }, [totalSeats, columnsPerRow]);
+  useEffect(() => {
+
+    try {
+
+      const savedConfig =
+        localStorage.getItem(
+          "pehraExamConfig"
+        );
+
+      if (!savedConfig) {
+
+        setExamConfig(null);
+        setAllSeats([]);
+        setMappedSeats([]);
+
+        return;
+      }
+
+
+      const parsedConfig =
+        JSON.parse(savedConfig);
+
+
+      const totalSeats =
+        Number(parsedConfig.totalSeats) || 0;
+
+      const columnsPerRow =
+        Number(parsedConfig.seatsPerRow) || 0;
+
+
+      if (
+        totalSeats <= 0 ||
+        columnsPerRow <= 0
+      ) {
+
+        setExamConfig(null);
+        setAllSeats([]);
+        setMappedSeats([]);
+
+        return;
+      }
+
+
+      const seats =
+        generateSeats(
+          totalSeats,
+          columnsPerRow
+        );
+
+
+      setExamConfig(parsedConfig);
+
+      setAllSeats(seats);
+
+      /*
+       * V1 starts with all configured seats mapped.
+       * The invigilator can click individual seats
+       * to unmap them.
+       */
+
+      setMappedSeats(
+        seats.map(
+          (seat) => seat.seat_id
+        )
+      );
+
+
+    } catch (error) {
+
+      console.error(
+        "Unable to load PEHRA exam configuration:",
+        error
+      );
+
+      setExamConfig(null);
+      setAllSeats([]);
+      setMappedSeats([]);
+    }
+
+  }, []);
+
+
+  /* ==========================================================
+     CALCULATED VALUES
+  ========================================================== */
+
+  const totalSeats =
+    allSeats.length;
+
+
+  const columnsPerRow =
+    Number(
+      examConfig?.seatsPerRow
+    ) || 0;
+
+
+  const rows =
+    Number(
+      examConfig?.rows
+    ) ||
+    (
+      columnsPerRow > 0
+        ? Math.ceil(
+            totalSeats /
+            columnsPerRow
+          )
+        : 0
+    );
 
 
   /* ==========================================================
      COVERAGE
-     ========================================================== */
+  ========================================================== */
 
   const coverage = useMemo(() => {
 
-    if (allSeats.length === 0) {
+    if (
+      allSeats.length === 0
+    ) {
       return 0;
     }
 
     return Math.round(
-      (mappedSeats.length / allSeats.length) * 100
+      (
+        mappedSeats.length /
+        allSeats.length
+      ) * 100
     );
 
-  }, [mappedSeats, allSeats]);
+  }, [
+    mappedSeats,
+    allSeats,
+  ]);
 
 
   /* ==========================================================
      CALIBRATION STATUS
-     ========================================================== */
+  ========================================================== */
 
   const calibrationStatus =
     coverage === 100
@@ -198,94 +324,29 @@ function CameraCalibration() {
 
   /* ==========================================================
      CALIBRATION CONTRACT
-     ========================================================== */
+  ========================================================== */
 
   const calibration = {
-    camera_id: selectedCamera.camera_id,
-    zone: selectedCamera.zone,
-    seat_ids: mappedSeats,
+
+    camera_id:
+      selectedCamera.camera_id,
+
+    zone:
+      selectedCamera.zone,
+
+    seat_ids:
+      mappedSeats,
+
     coverage,
-    status: calibrationStatus,
-  };
 
-
-  /* ==========================================================
-     GENERATE HALL LAYOUT
-     ========================================================== */
-
-  const generateHallLayout = () => {
-
-    const requestedSeats =
-      Math.max(
-        1,
-        Math.min(
-          500,
-          Number(totalSeatsInput) || 1
-        )
-      );
-
-    const requestedColumns =
-      Math.max(
-        1,
-        Math.min(
-          20,
-          Number(columnsInput) || 1
-        )
-      );
-
-
-    const newSeats =
-      generateSeats(
-        requestedSeats,
-        requestedColumns
-      );
-
-
-    setTotalSeats(requestedSeats);
-
-    setColumnsPerRow(requestedColumns);
-
-    setAllSeats(newSeats);
-      localStorage.setItem(
-  "pehraHallConfig",
-  JSON.stringify({
-    total_seats: requestedSeats,
-    columns_per_row: requestedColumns,
-    rows: Math.ceil(
-      requestedSeats / requestedColumns
-    ),
-    seats: newSeats,
-  })
-);
-
-    /*
-     * For Version 1 we begin the newly generated
-     * hall with every seat mapped.
-     *
-     * The invigilator can then click individual
-     * seats to unmap them.
-     */
-
-    setMappedSeats(
-      newSeats.map(
-        (seat) => seat.seat_id
-      )
-    );
-
-
-    setIsSaved(false);
-
-    setActionMessage(
-      `Hall layout generated: ${requestedSeats} seats, ${requestedColumns} columns and ${Math.ceil(
-        requestedSeats / requestedColumns
-      )} rows.`
-    );
+    status:
+      calibrationStatus,
   };
 
 
   /* ==========================================================
      TOGGLE SEAT MAPPING
-     ========================================================== */
+  ========================================================== */
 
   const toggleSeat = (seatId) => {
 
@@ -296,13 +357,16 @@ function CameraCalibration() {
 
     setMappedSeats((previous) => {
 
-      if (previous.includes(seatId)) {
+      if (
+        previous.includes(seatId)
+      ) {
 
         return previous.filter(
-          (id) => id !== seatId
+          (id) =>
+            id !== seatId
         );
-
       }
+
 
       return [
         ...previous,
@@ -316,11 +380,36 @@ function CameraCalibration() {
 
   /* ==========================================================
      SAVE CALIBRATION
-     ========================================================== */
+  ========================================================== */
 
   const saveCalibration = () => {
 
+    if (
+      allSeats.length === 0
+    ) {
+
+      setActionMessage(
+        "No exam hall configuration found. Please complete Exam Setup first."
+      );
+
+      return;
+    }
+
+
+    if (
+      coverage === 0
+    ) {
+
+      setActionMessage(
+        "Please map at least one seat before saving calibration."
+      );
+
+      return;
+    }
+
+
     setIsSaved(true);
+
 
     setActionMessage(
       `Calibration saved for ${selectedCamera.camera_id}.`
@@ -328,21 +417,59 @@ function CameraCalibration() {
 
 
     /*
-     * V2:
-     * This object will be sent to the backend.
-     *
-     * V1:
-     * Keep it locally and log it for demonstration.
+     * Keep the hall configuration in the format
+     * already consumed by LiveMonitor.jsx.
      */
+
     localStorage.setItem(
-  "pehraHallConfig",
-  JSON.stringify({
-    total_seats: totalSeats,
-    columns_per_row: columnsPerRow,
-    rows,
-    seats: allSeats,
-  })
-);
+      "pehraHallConfig",
+      JSON.stringify({
+
+        total_seats:
+          totalSeats,
+
+        columns_per_row:
+          columnsPerRow,
+
+        rows:
+          rows,
+
+        seats:
+          allSeats,
+
+      })
+    );
+
+
+    /*
+     * Store the camera calibration separately.
+     * This will be useful when the backend/WebSocket
+     * is introduced in V2.
+     */
+
+    localStorage.setItem(
+      "pehraCalibration",
+      JSON.stringify({
+
+        camera_id:
+          calibration.camera_id,
+
+        zone:
+          calibration.zone,
+
+        seat_ids:
+          calibration.seat_ids,
+
+        coverage:
+          calibration.coverage,
+
+        status:
+          calibration.status,
+
+      })
+    );
+
+
     console.log(
       "PEHRA CALIBRATION:",
       calibration
@@ -353,7 +480,7 @@ function CameraCalibration() {
 
   /* ==========================================================
      RESET MAPPING
-     ========================================================== */
+  ========================================================== */
 
   const resetCalibration = () => {
 
@@ -370,9 +497,11 @@ function CameraCalibration() {
 
   /* ==========================================================
      CAMERA CHANGE
-     ========================================================== */
+  ========================================================== */
 
-  const handleCameraChange = (camera) => {
+  const handleCameraChange = (
+    camera
+  ) => {
 
     setSelectedCamera(camera);
 
@@ -384,8 +513,72 @@ function CameraCalibration() {
 
 
   /* ==========================================================
+     NO EXAM CONFIGURATION
+  ========================================================== */
+
+  if (!examConfig) {
+
+    return (
+      <main className="camera-calibration-page">
+
+        <section className="calibration-header">
+
+          <div>
+
+            <span className="eyebrow">
+              SYSTEM SETUP
+            </span>
+
+            <h1>
+              Camera → Seat Calibration
+            </h1>
+
+            <p>
+              Camera calibration uses the hall layout
+              configured during Exam Setup.
+            </p>
+
+          </div>
+
+        </section>
+
+
+        <section
+          className="calibration-success"
+          style={{
+            marginTop: "24px",
+          }}
+        >
+
+          <span className="success-icon">
+            !
+          </span>
+
+          <div>
+
+            <strong>
+              Exam Setup Required
+            </strong>
+
+            <p>
+              Please complete Exam Setup and configure
+              the hall seating arrangement before
+              starting camera calibration.
+            </p>
+
+          </div>
+
+        </section>
+
+      </main>
+    );
+
+  }
+
+
+  /* ==========================================================
      RENDER
-     ========================================================== */
+  ========================================================== */
 
   return (
 
@@ -394,14 +587,14 @@ function CameraCalibration() {
 
       {/* ======================================================
           HEADER
-          ====================================================== */}
+      ====================================================== */}
 
       <section className="calibration-header">
 
         <div>
 
           <span className="eyebrow">
-            SYSTEM SETUP
+            CAMERA SETUP
           </span>
 
           <h1>
@@ -409,8 +602,8 @@ function CameraCalibration() {
           </h1>
 
           <p>
-            Teach PEHRA which physical area of a camera
-            image corresponds to each exam seat.
+            Map the configured examination seats
+            to the appropriate camera coverage.
           </p>
 
         </div>
@@ -436,15 +629,94 @@ function CameraCalibration() {
 
 
       {/* ======================================================
+          EXAM CONFIGURATION SUMMARY
+      ====================================================== */}
+
+      <section
+        className="hall-config-card"
+        style={{
+          marginBottom: "20px",
+        }}
+      >
+
+        <div className="hall-config-header">
+
+          <div>
+
+            <span className="detail-label">
+              EXAM CONFIGURATION
+            </span>
+
+            <h3>
+              {examConfig.examName}
+            </h3>
+
+            <p>
+              {examConfig.examCode}
+              {" · "}
+              {examConfig.hallNumber}
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div className="hall-config-summary">
+
+          <div>
+
+            <span>
+              Rows
+            </span>
+
+            <strong>
+              {rows}
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <span>
+              Columns
+            </span>
+
+            <strong>
+              {columnsPerRow}
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <span>
+              Seats
+            </span>
+
+            <strong>
+              {totalSeats}
+            </strong>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* ======================================================
           MAIN CONTENT
-          ====================================================== */}
+      ====================================================== */}
 
       <section className="calibration-layout">
 
 
         {/* ====================================================
             LEFT — CAMERA PREVIEW
-            ==================================================== */}
+        ==================================================== */}
 
         <div className="camera-panel">
 
@@ -491,7 +763,7 @@ function CameraCalibration() {
             </div>
 
 
-            {/* MOCK HALL */}
+            {/* CONFIGURED HALL */}
 
             <div className="mock-camera-hall">
 
@@ -504,43 +776,52 @@ function CameraCalibration() {
                 className="mock-camera-seats"
                 style={{
                   gridTemplateColumns:
-                    `repeat(${columnsPerRow}, minmax(0, 1fr))`,
+                    `repeat(${Math.max(
+                      columnsPerRow,
+                      1
+                    )}, minmax(0, 1fr))`,
                 }}
               >
 
-                {allSeats.map((seat) => {
+                {allSeats.map(
+                  (seat) => {
 
-                  const isMapped =
-                    mappedSeats.includes(
-                      seat.seat_id
+                    const isMapped =
+                      mappedSeats.includes(
+                        seat.seat_id
+                      );
+
+
+                    return (
+
+                      <button
+                        key={
+                          seat.seat_id
+                        }
+
+                        className={`camera-seat ${
+                          isMapped
+                            ? "mapped"
+                            : "unmapped"
+                        }`}
+
+                        onClick={() =>
+                          toggleSeat(
+                            seat.seat_id
+                          )
+                        }
+                      >
+
+                        <span></span>
+
+                        {seat.seat_id}
+
+                      </button>
+
                     );
 
-
-                  return (
-
-                    <button
-                      key={seat.seat_id}
-                      className={`camera-seat ${
-                        isMapped
-                          ? "mapped"
-                          : "unmapped"
-                      }`}
-                      onClick={() =>
-                        toggleSeat(
-                          seat.seat_id
-                        )
-                      }
-                    >
-
-                      <span></span>
-
-                      {seat.seat_id}
-
-                    </button>
-
-                  );
-
-                })}
+                  }
+                )}
 
               </div>
 
@@ -585,150 +866,15 @@ function CameraCalibration() {
 
 
         {/* ====================================================
-            RIGHT — CONFIGURATION + CALIBRATION
-            ==================================================== */}
+            RIGHT — CALIBRATION DETAILS
+        ==================================================== */}
 
         <div className="calibration-details">
 
 
           {/* ==================================================
-              HALL CONFIGURATION
-              ================================================== */}
-
-          <div className="hall-config-card">
-
-            <div className="hall-config-header">
-
-              <div>
-
-                <span className="detail-label">
-                  HALL CONFIGURATION
-                </span>
-
-                <h3>
-                  Seating Arrangement
-                </h3>
-
-                <p>
-                  Configure the actual seating capacity
-                  of this examination hall.
-                </p>
-
-              </div>
-
-            </div>
-
-
-            <div className="hall-config-inputs">
-
-
-              <div>
-
-                <label>
-                  Total Seats
-                </label>
-
-                <input
-                  type="number"
-                  min="1"
-                  max="500"
-                  value={totalSeatsInput}
-                  onChange={(event) =>
-                    setTotalSeatsInput(
-                      event.target.value
-                    )
-                  }
-                />
-
-              </div>
-
-
-              <div>
-
-                <label>
-                  Seats per Row
-                </label>
-
-                <input
-                  type="number"
-                  min="1"
-                  max="20"
-                  value={columnsInput}
-                  onChange={(event) =>
-                    setColumnsInput(
-                      event.target.value
-                    )
-                  }
-                />
-
-              </div>
-
-            </div>
-
-
-            <div className="hall-config-summary">
-
-              <div>
-
-                <span>
-                  Rows
-                </span>
-
-                <strong>
-                  {Math.ceil(
-                    (
-                      Number(totalSeatsInput) || 0
-                    ) /
-                    (
-                      Number(columnsInput) || 1
-                    )
-                  )}
-                </strong>
-
-              </div>
-
-
-              <div>
-
-                <span>
-                  Columns
-                </span>
-
-                <strong>
-                  {Number(columnsInput) || 0}
-                </strong>
-
-              </div>
-
-
-              <div>
-
-                <span>
-                  Seats
-                </span>
-
-                <strong>
-                  {Number(totalSeatsInput) || 0}
-                </strong>
-
-              </div>
-
-            </div>
-
-
-            <button
-              className="generate-layout-btn"
-              onClick={generateHallLayout}
-            >
-              Generate Hall Layout
-            </button>
-
-          </div>
-
-
-          {/* ==================================================
               CAMERA SELECTOR
-              ================================================== */}
+          ================================================== */}
 
           <div className="detail-section">
 
@@ -737,7 +883,10 @@ function CameraCalibration() {
             </span>
 
             <select
-              value={selectedCamera.camera_id}
+              value={
+                selectedCamera.camera_id
+              }
+
               onChange={(event) => {
 
                 const camera =
@@ -748,24 +897,33 @@ function CameraCalibration() {
                   );
 
                 if (camera) {
+
                   handleCameraChange(
                     camera
                   );
+
                 }
 
               }}
             >
 
-              {cameras.map((camera) => (
+              {cameras.map(
+                (camera) => (
 
-                <option
-                  key={camera.camera_id}
-                  value={camera.camera_id}
-                >
-                  {camera.camera_id}
-                </option>
+                  <option
+                    key={
+                      camera.camera_id
+                    }
 
-              ))}
+                    value={
+                      camera.camera_id
+                    }
+                  >
+                    {camera.camera_id}
+                  </option>
+
+                )
+              )}
 
             </select>
 
@@ -774,7 +932,7 @@ function CameraCalibration() {
 
           {/* ==================================================
               ZONE / CAMERA STATUS
-              ================================================== */}
+          ================================================== */}
 
           <div className="info-row">
 
@@ -811,8 +969,72 @@ function CameraCalibration() {
 
 
           {/* ==================================================
+              HALL SUMMARY
+          ================================================== */}
+
+          <div className="calibration-card">
+
+            <div className="calibration-card-header">
+
+              <span className="detail-label">
+                HALL LAYOUT
+              </span>
+
+              <span className="calibration-badge ready">
+                Configured
+              </span>
+
+            </div>
+
+
+            <div className="calibration-info">
+
+              <div>
+
+                <span>
+                  Hall
+                </span>
+
+                <strong>
+                  {examConfig.hallNumber}
+                </strong>
+
+              </div>
+
+
+              <div>
+
+                <span>
+                  Rows
+                </span>
+
+                <strong>
+                  {rows}
+                </strong>
+
+              </div>
+
+
+              <div>
+
+                <span>
+                  Seats
+                </span>
+
+                <strong>
+                  {totalSeats}
+                </strong>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          {/* ==================================================
               COVERAGE
-              ================================================== */}
+          ================================================== */}
 
           <div className="coverage-section">
 
@@ -843,7 +1065,8 @@ function CameraCalibration() {
 
               <div
                 style={{
-                  width: `${coverage}%`,
+                  width:
+                    `${coverage}%`,
                 }}
               ></div>
 
@@ -863,7 +1086,7 @@ function CameraCalibration() {
 
           {/* ==================================================
               CALIBRATION STATUS
-              ================================================== */}
+          ================================================== */}
 
           <div className="calibration-card">
 
@@ -880,7 +1103,8 @@ function CameraCalibration() {
                 }`}
               >
 
-                {calibrationStatus === "ready"
+                {calibrationStatus ===
+                "ready"
                   ? "Ready"
                   : calibrationStatus ===
                     "in_progress"
@@ -939,14 +1163,19 @@ function CameraCalibration() {
 
           {/* ==================================================
               ACTIONS
-              ================================================== */}
+          ================================================== */}
 
           <div className="calibration-actions">
 
             <button
               className="save-calibration"
-              disabled={coverage === 0}
-              onClick={saveCalibration}
+              disabled={
+                coverage === 0
+              }
+
+              onClick={
+                saveCalibration
+              }
             >
               Save Calibration
             </button>
@@ -954,7 +1183,9 @@ function CameraCalibration() {
 
             <button
               className="reset-calibration"
-              onClick={resetCalibration}
+              onClick={
+                resetCalibration
+              }
             >
               Reset
             </button>
@@ -964,7 +1195,7 @@ function CameraCalibration() {
 
           {/* ==================================================
               FEEDBACK
-              ================================================== */}
+          ================================================== */}
 
           {actionMessage && (
 
@@ -981,7 +1212,7 @@ function CameraCalibration() {
 
           {/* ==================================================
               CONTRACT NOTE
-              ================================================== */}
+          ================================================== */}
 
           <div className="calibration-note">
 
@@ -1000,7 +1231,7 @@ function CameraCalibration() {
 
       {/* ======================================================
           SUCCESS
-          ====================================================== */}
+      ====================================================== */}
 
       {isSaved && (
 
@@ -1028,9 +1259,25 @@ function CameraCalibration() {
         </section>
 
       )}
+      <div className="calibration-footer">
+  <button
+    className="secondary-operation-button"
+    onClick={() => window.history.back()}
+  >
+    ← Back
+  </button>
+
+  <button
+    className="primary-operation-button"
+    disabled={!isSaved}
+   onClick={onProceedToPreCheck}
+  >
+    Proceed to Pre-Exam Check
+    <span>→</span>
+  </button>
+</div>
 
     </main>
-
   );
 }
 

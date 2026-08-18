@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import "./LiveMonitor.css";
+// ============================================================
+// V2 BACKEND CONFIGURATION
+// ============================================================
 
+const API_BASE_URL = "http://localhost:8000";
+const EXAM_ID = "EXAM-101";
 /*
  * ============================================================
  * PEHRA - VERSION 1 MOCK DATA
@@ -896,6 +901,106 @@ const getSeatEvents = (seatId) => {
 
 function LiveMonitor() {
 
+  /*
+   * ==========================================================
+   * EXAM CONFIGURATION
+   * ==========================================================
+   *
+   * Exam Setup is the single source of truth for:
+   * - exam name
+   * - exam code
+   * - hall number
+   * - total seats
+   *
+   * The hall layout itself continues to come from
+   * pehraHallConfig, which is already used below.
+   */
+
+  const [examConfig, setExamConfig] = useState(() => {
+
+    try {
+
+      const saved =
+        localStorage.getItem(
+          "pehraExamConfig"
+        );
+
+      if (saved) {
+        return JSON.parse(saved);
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Unable to load PEHRA exam configuration:",
+        error
+      );
+
+    }
+
+    return {
+      examName: exam.name,
+      examCode: exam.exam_id,
+      hallNumber: exam.hall_id,
+      totalSeats: 0,
+    };
+
+  });
+
+
+  useEffect(() => {
+
+    const loadExamConfiguration = () => {
+
+      try {
+
+        const saved =
+          localStorage.getItem(
+            "pehraExamConfig"
+          );
+
+        if (saved) {
+
+          const parsed =
+            JSON.parse(saved);
+
+          setExamConfig(parsed);
+
+        }
+
+      } catch (error) {
+
+        console.error(
+          "Unable to reload PEHRA exam configuration:",
+          error
+        );
+
+      }
+
+    };
+
+
+    loadExamConfiguration();
+
+
+    window.addEventListener(
+      "storage",
+      loadExamConfiguration
+    );
+
+
+    return () => {
+
+      window.removeEventListener(
+        "storage",
+        loadExamConfiguration
+      );
+
+    };
+
+  }, []);
+
+
   const [hallConfig, setHallConfig] = useState(() => {
 
     try {
@@ -928,7 +1033,18 @@ function LiveMonitor() {
   });
 
 
-  const seats = hallConfig.seats || defaultSeats;
+  const configuredSeats = hallConfig.seats || defaultSeats;
+
+const seats = configuredSeats.map((seat) => {
+  const backendSeat = backendSeats.find(
+    (item) => item.seat_id === seat.seat_id
+  );
+
+  return {
+    ...seat,
+    status: backendSeat?.status || seat.status || "normal",
+  };
+});
 
 
   const calibration = {
@@ -992,6 +1108,51 @@ function LiveMonitor() {
   };
 
 }, []);
+// ============================================================
+// V2 — LOAD SEATS FROM BACKEND
+// ============================================================
+
+useEffect(() => {
+  const loadBackendSeats = async () => {
+    try {
+      setBackendLoading(true);
+      setBackendError("");
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/exams/${EXAM_ID}/seats`
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Seat API returned ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid seat data received from backend");
+      }
+
+      setBackendSeats(data);
+
+    } catch (error) {
+      console.error(
+        "Unable to load seats from PEHRA backend:",
+        error
+      );
+
+      setBackendError(
+        "Unable to connect to monitoring backend."
+      );
+
+    } finally {
+      setBackendLoading(false);
+    }
+  };
+
+  loadBackendSeats();
+}, []);
 useEffect(() => {
 
   const seatExists = seats.some(
@@ -1012,7 +1173,15 @@ useEffect(() => {
    * Local invigilator changes.
    * These are temporary frontend actions for Version 1.
    */
+  // ============================================================
+// V2 — BACKEND SEAT STATE
+// ============================================================
+
+const [backendSeats, setBackendSeats] = useState([]);
+const [backendLoading, setBackendLoading] = useState(true);
+const [backendError, setBackendError] = useState("");
   const [seatOverrides, setSeatOverrides] = useState({});
+  
 
   const [actionMessage, setActionMessage] = useState("");
 
@@ -1172,17 +1341,25 @@ useEffect(() => {
 
 
           <h1>
-            {exam.name} — {exam.subject}
+            {examConfig.examName || exam.name}
           </h1>
 
 
           <div className="exam-meta">
 
-            <span>Hall A</span>
+            <span>
+              {examConfig.examCode || exam.exam_id}
+            </span>
 
             <span>•</span>
 
-           <span>{seats.length} Seats</span>
+            <span>
+              {examConfig.hallNumber || exam.hall_id}
+            </span>
+
+            <span>•</span>
+
+            <span>{seats.length} Seats</span>
 
             <span>•</span>
 
@@ -1281,7 +1458,7 @@ useEffect(() => {
               </h2>
 
               <p>
-                Hall A · Current seating status
+                {examConfig.hallNumber || exam.hall_id} · Current seating status
               </p>
 
             </div>
