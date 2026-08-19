@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Dashboard from "./Dashboard.jsx";
 import Exams from "./Exams.jsx";
+import Privacy from "./Privacy.jsx";
 import ActiveExamDock from "./ActiveExamDock.jsx";
 import "./App.css";
 
@@ -27,7 +28,6 @@ function App() {
             alt="PEHRA"
             className="brand-logo"
             onError={(e) => {
-              // fallback if file name differs
               e.currentTarget.src = "/pehra-logo.png";
             }}
           />
@@ -119,25 +119,7 @@ function App() {
         </main>
       )}
 
-      {page === "privacy" && (
-        <main className="placeholder-page">
-          <div className="placeholder-card">
-            <h1>Privacy Center</h1>
-            <p>
-              Architecture & telemetry guarantees: Zero face recognition, local edge inference
-              only.
-            </p>
-            <button
-              type="button"
-              className="secondary-button"
-              style={{ marginTop: "16px" }}
-              onClick={() => setPage("dashboard")}
-            >
-              ← Return to Dashboard
-            </button>
-          </div>
-        </main>
-      )}
+      {page === "privacy" && <Privacy onNavigate={handleNavigate} />}
 
       <ActiveExamDock onMonitor={() => setPage("live")} />
     </div>

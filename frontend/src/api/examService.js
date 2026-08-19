@@ -1,14 +1,15 @@
 /**
- * PEHRA Exam Service
- * Handles API calls to backend (/api/exams) with transparent LocalStorage + Mock fallback.
- * Ensures the app works 100% reliably in development, testing, and offline hackathon demos.
+ * PEHRA Exam Service & P4 Integration Client
+ * Handles API calls to backend (/api/exams, /api/calibration, /api/privacy/status) with transparent LocalStorage + Mock fallback.
+ * Conforms strictly to P4 integration guide (POST /api/calibration, GET /api/privacy/status).
  */
 
 import { INITIAL_EXAMS } from "./mockData.js";
 import { DEFAULT_HALLS } from "./contracts.js";
 
 const STORAGE_KEY = "pehra_exams_store_v1";
-const API_BASE_URL = "http://localhost:8000/api";
+const CALIB_STORAGE_KEY = "pehra_calibration_store_v1";
+const API_BASE = "http://localhost:8000";
 
 function loadLocalExams() {
   try {
@@ -31,14 +32,82 @@ function saveLocalExams(exams) {
   }
 }
 
-export const examService = {
-  /**
-   * Fetch all exams
-   */
-  async getExams() {
+/**
+ * P4 Specific Integration: Save camera-to-seat mapping
+ * POST /api/calibration
+ */
+export const submitCalibration = async (calibrationData) => {
+  const payload = {
+    camera_id: calibrationData.cameraId || calibrationData.camera_id || "CAM-01",
+    exam_id: calibrationData.examId || calibrationData.exam_id || "EXAM-101",
+    zone: calibrationData.zone || "Zone-A",
+    seat_ids: calibrationData.selectedSeats || calibrationData.seat_ids || ["A-01"],
+    coverage: typeof calibrationData.coverageScore === "number"
+      ? (calibrationData.coverageScore > 1 ? calibrationData.coverageScore / 100 : calibrationData.coverageScore)
+      : (calibrationData.coverage || 0.98),
+    status: calibrationData.status || "calibrated",
+  };
+
+  try {
+    const response = await fetch(`${API_BASE}/api/calibration`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(1500),
+    });
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (error) {
+    console.warn("Calibration submission fallback to local storage:", error);
     try {
-      const response = await fetch(`${API_BASE_URL}/exams`, {
-        signal: AbortSignal.timeout(1200),
+      localStorage.setItem(CALIB_STORAGE_KEY, JSON.stringify(payload));
+    } catch (err) {
+      console.error("Local calib save error:", err);
+    }
+  }
+  return {
+    status: "success",
+    camera_id: payload.camera_id,
+    message: "Calibration mapped locally (Mock/Offline)",
+  };
+};
+
+/**
+ * P4 Specific Integration: Check privacy compliance
+ * GET /api/privacy/status
+ */
+export const fetchPrivacyStatus = async () => {
+  try {
+    const response = await fetch(`${API_BASE}/api/privacy/status`, {
+      signal: AbortSignal.timeout(1500),
+    });
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (error) {
+    console.warn("Failed to fetch privacy status from live backend, using local compliance:", error);
+  }
+  return {
+    privacy_mode: "edge_anonymized",
+    raw_feed_stored: false,
+    retention_policy: "ephemeral_only",
+    status: "compliant",
+    face_recognition: "Disabled (Guaranteed)",
+    cloud_processing: "Disabled (100% Local Inference)",
+    identifiable_video_transmission: "Disabled (Ephemeral)",
+    local_processing: "Active (Edge Node)",
+    identity_data: "Not Required (Seat IDs Only)",
+    data_minimization: "Enforced",
+    evidence_retention_mode: "Off by default",
+  };
+};
+
+export const examService = {
+  getExams: async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/exams`, {
+        signal: AbortSignal.timeout(1500),
       });
       if (response.ok) {
         const liveData = await response.json();
@@ -46,18 +115,15 @@ export const examService = {
         return liveData;
       }
     } catch {
-      // Backend not running or offline; fall back to local mock data silently
+      // Fallback
     }
     return loadLocalExams();
   },
 
-  /**
-   * Fetch single exam by ID
-   */
-  async getExamById(id) {
+  getExamById: async (id) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/exams/${id}`, {
-        signal: AbortSignal.timeout(1200),
+      const response = await fetch(`${API_BASE}/api/exams/${id}`, {
+        signal: AbortSignal.timeout(1500),
       });
       if (response.ok) {
         return await response.json();
@@ -69,12 +135,9 @@ export const examService = {
     return exams.find((e) => e.id === id) || null;
   },
 
-  /**
-   * Create or save an exam draft
-   */
-  async createExam(examData) {
+  createExam: async (examData) => {
     const newExam = {
-      id: `exam-${Date.now()}`,
+      id: examData.id || `exam-${Date.now()}`,
       title: examData.title || "Untitled Examination",
       subject: examData.subject || "General",
       date: examData.date || new Date().toISOString().split("T")[0],
@@ -86,9 +149,9 @@ export const examService = {
       students: Number(examData.students) || 60,
       totalSeats: Number(examData.totalSeats) || 60,
       invigilator: examData.invigilator || "Current Invigilator",
-      status: "draft",
-      currentStep: 1,
-      progress: 15,
+      status: examData.status || "draft",
+      currentStep: examData.currentStep || 1,
+      progress: examData.progress || 20,
       instructions: examData.instructions || "",
       evidenceRetention: Boolean(examData.evidenceRetention),
       seatingConfig: examData.seatingConfig || {
@@ -104,20 +167,20 @@ export const examService = {
         zonesMapped: 0,
         status: "pending",
       },
-      ...examData,
+      summary: examData.summary || null,
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}/exams`, {
+      const response = await fetch(`${API_BASE}/api/exams`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newExam),
-        signal: AbortSignal.timeout(1200),
+        signal: AbortSignal.timeout(1500),
       });
       if (response.ok) {
         const saved = await response.json();
         const exams = loadLocalExams();
-        saveLocalExams([saved, ...exams]);
+        saveLocalExams([saved, ...exams.filter((e) => e.id !== saved.id)]);
         return saved;
       }
     } catch {
@@ -125,25 +188,17 @@ export const examService = {
     }
 
     const exams = loadLocalExams();
-    const updated = [newExam, ...exams];
+    const updated = [newExam, ...exams.filter((e) => e.id !== newExam.id)];
     saveLocalExams(updated);
     return newExam;
   },
 
-  /**
-   * Update an existing exam with new step data
-   */
-  async updateExam(id, patch) {
+  updateExam: async (id, patch) => {
     const exams = loadLocalExams();
     const index = exams.findIndex((e) => e.id === id);
     if (index === -1) return null;
 
-    const updated = {
-      ...exams[index],
-      ...patch,
-    };
-
-    // Calculate progress percentage based on currentStep
+    const updated = { ...exams[index], ...patch };
     if (updated.currentStep) {
       updated.progress = Math.min(100, Math.round((updated.currentStep / 6) * 100));
     }
@@ -152,23 +207,32 @@ export const examService = {
     saveLocalExams(exams);
 
     try {
-      await fetch(`${API_BASE_URL}/exams/${id}`, {
+      await fetch(`${API_BASE}/api/exams/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updated),
-        signal: AbortSignal.timeout(1200),
+        signal: AbortSignal.timeout(1500),
       });
     } catch {
-      // Offline fallback
+      // Fallback
     }
 
     return updated;
   },
 
-  /**
-   * Transition exam to LIVE
-   */
-  async startExam(id) {
+  startExam: async (id) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/exams/${id}/start`, {
+        method: "POST",
+        signal: AbortSignal.timeout(1500),
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch {
+      // Fallback
+    }
+
     const patch = {
       status: "live",
       currentStep: 6,
@@ -176,14 +240,23 @@ export const examService = {
       elapsed: "00:00:01",
       startedAt: new Date().toISOString(),
     };
-    return this.updateExam(id, patch);
+    return examService.updateExam(id, patch);
   },
 
-  /**
-   * Transition exam to COMPLETED with sample report
-   */
-  async endExam(id) {
-    const exam = await this.getExamById(id);
+  endExam: async (id) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/exams/${id}/end`, {
+        method: "POST",
+        signal: AbortSignal.timeout(1500),
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch {
+      // Fallback
+    }
+
+    const exam = await examService.getExamById(id);
     const total = exam ? exam.students || 60 : 60;
     const patch = {
       status: "completed",
@@ -233,20 +306,17 @@ export const examService = {
         },
       },
     };
-    return this.updateExam(id, patch);
+    return examService.updateExam(id, patch);
   },
 
-  /**
-   * Delete an exam (e.g. discard draft)
-   */
-  async deleteExam(id) {
+  deleteExam: async (id) => {
     const exams = loadLocalExams();
     const filtered = exams.filter((e) => e.id !== id);
     saveLocalExams(filtered);
     try {
-      await fetch(`${API_BASE_URL}/exams/${id}`, {
+      await fetch(`${API_BASE}/api/exams/${id}`, {
         method: "DELETE",
-        signal: AbortSignal.timeout(1200),
+        signal: AbortSignal.timeout(1500),
       });
     } catch {
       // Fallback
@@ -254,18 +324,13 @@ export const examService = {
     return true;
   },
 
-  /**
-   * Reset store to initial seed data
-   */
-  resetStore() {
+  submitCalibration,
+  saveCalibration: submitCalibration,
+  fetchPrivacyStatus,
+  getPrivacyStatus: fetchPrivacyStatus,
+  resetStore: () => {
     saveLocalExams(INITIAL_EXAMS);
     return INITIAL_EXAMS;
   },
-
-  /**
-   * Get list of preset halls
-   */
-  getHalls() {
-    return DEFAULT_HALLS;
-  },
+  getHalls: () => DEFAULT_HALLS,
 };

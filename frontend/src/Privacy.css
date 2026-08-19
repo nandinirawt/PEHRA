@@ -1,0 +1,221 @@
+/* =========================================================
+   PRIVACY PAGE STYLES
+========================================================= */
+
+.privacy-page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px 42px 150px;
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+.privacy-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.privacy-header h1 {
+  margin: 0;
+  color: #171717;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -1px;
+}
+
+.privacy-subtitle {
+  margin: 8px 0 0;
+  color: #737373;
+  font-size: 14px;
+}
+
+.privacy-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ecfdf5;
+  color: #059669;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+}
+
+/* Pipeline visualizer */
+.privacy-pipeline-card {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 28px 32px;
+  margin-bottom: 28px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.privacy-pipeline-card h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #171717;
+}
+
+.privacy-pipeline-card p {
+  margin: 0 0 24px;
+  font-size: 12px;
+  color: #737373;
+}
+
+.pipeline-flow-steps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.pipe-step {
+  flex: 1;
+  background: #fafafa;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pipe-step.highlight {
+  border-color: #ffad1f;
+  background: #fffdfa;
+}
+
+.step-icon {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.pipe-step strong {
+  display: block;
+  font-size: 11px;
+  color: #171717;
+  margin-bottom: 2px;
+}
+
+.pipe-step span {
+  font-size: 9px;
+  color: #737373;
+}
+
+.pipe-arrow {
+  font-size: 18px;
+  color: #a3a3a3;
+  font-weight: bold;
+}
+
+/* Privacy Grid */
+.privacy-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.privacy-card {
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  padding: 22px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.card-top-icon {
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.privacy-card h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #171717;
+}
+
+.status-value {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.privacy-card p {
+  margin: 0;
+  font-size: 11px;
+  color: #737373;
+  line-height: 1.4;
+}
+
+/* Banner */
+.privacy-cert-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #171717;
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 24px 32px;
+}
+
+.cert-badge {
+  font-size: 9px;
+  font-weight: 800;
+  color: #ffad1f;
+  letter-spacing: 0.8px;
+}
+
+.cert-left h3 {
+  margin: 6px 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.cert-left code {
+  color: #ffad1f;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.cert-left p {
+  margin: 0;
+  font-size: 11px;
+  color: #a3a3a3;
+}
+
+@media (max-width: 900px) {
+  .privacy-grid {
+    grid-template-columns: 1fr;
+  }
+  .pipeline-flow-steps {
+    flex-direction: column;
+  }
+  .pipe-arrow {
+    transform: rotate(90deg);
+  }
+  .privacy-cert-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}
