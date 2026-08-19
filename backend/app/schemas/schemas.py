@@ -29,12 +29,22 @@ class SeatSchema(BaseModel):
     class Config:
         from_attributes = True
 
+# --- P5 Pose Schema ---
+class PoseFeatures(BaseModel):
+    head_direction: Optional[str] = "center"
+    body_orientation: Optional[str] = "forward"
+    hand_state: Optional[str] = "normal"
+
 class PoseDataSchema(BaseModel):
     seat_id: str
     timestamp: str
-    presence: bool
-    confidence: float
-    pose_features: Dict[str, Any]
+    presence: bool = True
+    confidence: float = 1.0
+    pose_features: Optional[Dict[str, Any]] = {
+        "head_direction": "center",
+        "body_orientation": "forward",
+        "hand_state": "normal"
+    }
 
 class BehaviorEventSchema(BaseModel):
     event_id: str
