@@ -1,0 +1,109 @@
+.event-row {
+  display: flex;
+  align-items: center;
+
+  width: 100%;
+
+  padding: 12px 0;
+
+  border-bottom: 1px solid #eeeeee;
+}
+
+.event-row:last-child {
+  border-bottom: none;
+}
+
+
+/* STATUS DOT */
+
+.event-row-dot {
+  width: 7px;
+  height: 7px;
+
+  flex-shrink: 0;
+
+  margin-right: 12px;
+
+  border-radius: 50%;
+}
+
+
+/* NORMAL */
+
+.event-row-dot.normal {
+  background: #929292;
+}
+
+
+/* LIVE */
+
+.event-row-dot.live {
+  background: #36a269;
+}
+
+
+/* REVIEW */
+
+.event-row-dot.review {
+  background: #ffad1f;
+}
+
+
+/* HIGH */
+
+.event-row-dot.high {
+  background: #dc4b4b;
+}
+
+
+/* UNKNOWN */
+
+.event-row-dot.unknown {
+  background: #929292;
+}
+
+
+/* CONTENT */
+
+.event-row-content {
+  flex: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+}
+
+.event-row-main {
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+
+  min-width: 0;
+}
+
+.event-row-main strong {
+  color: #333333;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.event-row-main span {
+  color: #888888;
+
+  font-size: 10px;
+}
+
+
+/* TIME */
+
+.event-row-content time {
+  flex-shrink: 0;
+
+  color: #929292;
+
+  font-size: 10px;
+}
