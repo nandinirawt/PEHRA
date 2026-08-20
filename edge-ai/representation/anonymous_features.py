@@ -1,7 +1,7 @@
 def get_body_orientation(pose_landmarks, orientation_history):
     """
     Determines body orientation using shoulder depth
-    and smooths the result across recent frames.
+    and applies smoothing to prevent rapid switching.
     """
 
     if not pose_landmarks:
@@ -17,23 +17,28 @@ def get_body_orientation(pose_landmarks, orientation_history):
         left_shoulder.z - right_shoulder.z
     )
 
-    if depth_difference < 0.15:
+    # Less sensitive thresholds
+    if depth_difference < 0.20:
         current_orientation = "forward"
+
     elif left_shoulder.z < right_shoulder.z:
         current_orientation = "left"
+
     else:
         current_orientation = "right"
 
+    # Store recent results
     orientation_history.append(current_orientation)
 
-    if len(orientation_history) > 15:
+    # Keep last 30 frames
+    if len(orientation_history) > 30:
         orientation_history.pop(0)
 
+    # Return the most frequent orientation
     return max(
         set(orientation_history),
         key=orientation_history.count
     )
-
 
 def get_hand_state(
     current_hand_landmarks,
