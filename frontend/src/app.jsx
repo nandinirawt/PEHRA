@@ -1,3 +1,5 @@
+import PrivacyCenter from "./PrivacyCenter";
+import LiveMonitorWorkspace from "./LiveMonitorWorkspace";
 import { useState } from "react";
 import Dashboard from "./Dashboard.jsx";
 import Exams from "./Exams.jsx";
@@ -16,6 +18,7 @@ function App() {
       <header className="navbar">
 
         <div className="brand">
+
           <img
             src="/pehra-logo.png"
             alt="PEHRA"
@@ -25,6 +28,7 @@ function App() {
           <span className="brand-name">
             PEHRA
           </span>
+
         </div>
 
 
@@ -39,6 +43,7 @@ function App() {
             Dashboard
           </button>
 
+
           <button
             className={`nav-link-button ${
               page === "exams" ? "active" : ""
@@ -48,6 +53,7 @@ function App() {
             Exams
           </button>
 
+
           <button
             className={`nav-link-button ${
               page === "live" ? "active" : ""
@@ -56,6 +62,7 @@ function App() {
           >
             Live Monitor
           </button>
+
 
           <button
             className={`nav-link-button ${
@@ -75,6 +82,7 @@ function App() {
             <span className="notification-dot"></span>
             ◌
           </button>
+
 
           <div className="profile">
 
@@ -109,22 +117,19 @@ function App() {
         <Dashboard />
       )}
 
+
       {page === "exams" && (
         <Exams />
       )}
 
+
       {page === "live" && (
-        <main className="placeholder-page">
-          <h1>Live Monitor</h1>
-          <p>Live monitoring will be built next.</p>
-        </main>
+        <LiveMonitorWorkspace />
       )}
 
+
       {page === "privacy" && (
-        <main className="placeholder-page">
-          <h1>Privacy Center</h1>
-          <p>Privacy page will be built next.</p>
-        </main>
+        <PrivacyCenter />
       )}
       <ActiveExamDock
   onMonitor={() => setPage("live")}
