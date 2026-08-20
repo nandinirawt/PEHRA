@@ -1,11 +1,15 @@
-function Navbar({ activePage, onNavigate }) {
+function Navbar({ page, setPage }) {
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+  };
+
   return (
     <header className="navbar">
 
-      {/* Brand */}
+      {/* BRAND */}
       <div className="brand">
         <img
-          src="/pehra-logo.png"
+          src="/pehra-navbar-logo.png"
           alt="PEHRA"
           className="brand-logo"
         />
@@ -16,41 +20,41 @@ function Navbar({ activePage, onNavigate }) {
       </div>
 
 
-      {/* Navigation */}
+      {/* NAVIGATION */}
       <nav className="nav-links">
 
         <button
           className={`nav-link-button ${
-            activePage === "dashboard" ? "active" : ""
+            page === "dashboard" ? "active" : ""
           }`}
-          onClick={() => onNavigate("dashboard")}
+          onClick={() => handlePageChange("dashboard")}
         >
           Dashboard
         </button>
 
         <button
           className={`nav-link-button ${
-            activePage === "exams" ? "active" : ""
+            page === "exams" ? "active" : ""
           }`}
-          onClick={() => onNavigate("exams")}
+          onClick={() => handlePageChange("exams")}
         >
           Exams
         </button>
 
         <button
           className={`nav-link-button ${
-            activePage === "live" ? "active" : ""
+            page === "live" ? "active" : ""
           }`}
-          onClick={() => onNavigate("live")}
+          onClick={() => handlePageChange("live")}
         >
           Live Monitor
         </button>
 
         <button
           className={`nav-link-button ${
-            activePage === "privacy" ? "active" : ""
+            page === "privacy" ? "active" : ""
           }`}
-          onClick={() => onNavigate("privacy")}
+          onClick={() => handlePageChange("privacy")}
         >
           Privacy
         </button>
@@ -58,14 +62,17 @@ function Navbar({ activePage, onNavigate }) {
       </nav>
 
 
-      {/* Right side */}
+      {/* RIGHT SIDE */}
       <div className="nav-right">
 
+        {/* Notification */}
         <button className="notification">
-          <span className="notification-dot"></span>
           ◌
+          <span className="notification-dot"></span>
         </button>
 
+
+        {/* Profile */}
         <div className="profile">
 
           <div className="avatar">

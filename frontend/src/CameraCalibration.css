@@ -1,14 +1,15 @@
 /* ============================================================
    PEHRA — CAMERA → SEAT CALIBRATION
+   Improved / consolidated stylesheet
    ============================================================ */
 
 .camera-calibration-page {
-  max-width: 1380px;
+  width: min(1380px, calc(100% - 36px));
   margin: 0 auto;
-  padding: 36px 42px 48px;
+  padding: 30px 0 48px;
   color: #171717;
+  box-sizing: border-box;
 }
-
 
 /* ============================================================
    HEADER
@@ -19,7 +20,7 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 24px;
-  margin-bottom: 24px;
+  margin-bottom: 22px;
 }
 
 .calibration-header h1 {
@@ -72,6 +73,118 @@
   background: #ffad1f;
 }
 
+/* ============================================================
+   EXAM / HALL CONFIG
+   ============================================================ */
+
+.hall-config-card {
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  background: #fafafa;
+  box-sizing: border-box;
+}
+
+.hall-config-header {
+  margin-bottom: 14px;
+}
+
+.hall-config-header h3 {
+  margin: 4px 0;
+  font-size: 15px;
+}
+
+.hall-config-header p {
+  margin: 0;
+  color: #929292;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.hall-config-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.hall-config-inputs div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hall-config-inputs label {
+  color: #777;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.hall-config-inputs input {
+  width: 100%;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border: 1px solid #dedede;
+  border-radius: 7px;
+  background: #fff;
+  color: #333;
+  font-size: 12px;
+  outline: none;
+}
+
+.hall-config-inputs input:focus {
+  border-color: #ffad1f;
+}
+
+.hall-config-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 12px;
+  border-top: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.hall-config-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px;
+  text-align: center;
+}
+
+.hall-config-summary > div + div {
+  border-left: 1px solid #e8e8e8;
+}
+
+.hall-config-summary span {
+  color: #929292;
+  font-size: 9px;
+}
+
+.hall-config-summary strong {
+  color: #171717;
+  font-size: 15px;
+}
+
+.generate-layout-btn {
+  width: 100%;
+  height: 36px;
+  margin-top: 12px;
+  border: 1px solid #dedede;
+  border-radius: 7px;
+  background: #fff;
+  color: #333;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.generate-layout-btn:hover {
+  border-color: #ffad1f;
+  background: #fffaf0;
+}
 
 /* ============================================================
    MAIN LAYOUT
@@ -79,11 +192,10 @@
 
 .calibration-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(390px, 0.65fr);
+  grid-template-columns: minmax(0, 1.55fr) minmax(360px, 0.7fr);
   gap: 18px;
   align-items: start;
 }
-
 
 /* ============================================================
    PANELS
@@ -94,16 +206,18 @@
   background: #fff;
   border: 1px solid #e8e8e8;
   border-radius: 10px;
+  box-sizing: border-box;
 }
 
 .camera-panel {
   padding: 18px;
+  min-width: 0;
 }
 
 .calibration-details {
   padding: 20px;
+  min-width: 0;
 }
-
 
 /* ============================================================
    PANEL HEADING
@@ -113,6 +227,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  gap: 12px;
   margin-bottom: 14px;
 }
 
@@ -142,6 +257,39 @@
   background: #ffad1f;
 }
 
+/* ============================================================
+   CAMERA MODE
+   ============================================================ */
+
+.camera-mode-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.camera-mode-switch button {
+  min-height: 34px;
+  padding: 7px 14px;
+  border: 1px solid #d8d8d8;
+  border-radius: 8px;
+  background: #fff;
+  color: #171717;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.camera-mode-switch button:hover {
+  border-color: #bdbdbd;
+}
+
+.camera-mode-switch button.active {
+  background: #171717;
+  color: #fff;
+  border-color: #171717;
+}
 
 /* ============================================================
    CAMERA PREVIEW
@@ -149,21 +297,14 @@
 
 .camera-preview {
   position: relative;
-
-  /* FIX:
-     Allow enough vertical space for the complete
-     12-row × 6-column seat layout.
-  */
-  min-height: 650px;
-
-  /* FIX:
-     Do not clip the bottom rows.
-  */
+  width: 100%;
+  height: auto;
+  min-height: 0;
   overflow: visible;
-
-  border-radius: 8px;
   border: 1px solid #dedede;
+  border-radius: 10px;
   background: #f5f5f5;
+  box-sizing: border-box;
 }
 
 .camera-overlay {
@@ -171,11 +312,11 @@
   top: 12px;
   left: 14px;
   right: 14px;
-  z-index: 3;
-
+  z-index: 30;
   display: flex;
   justify-content: space-between;
-
+  gap: 12px;
+  pointer-events: none;
   color: #777;
   font-size: 9px;
   font-weight: 700;
@@ -183,49 +324,304 @@
 }
 
 .camera-overlay-bottom {
-  position: absolute;
-  bottom: 10px;
-  left: 0;
-  right: 0;
-
-  text-align: center;
-  z-index: 3;
-
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 30px;
+  padding: 9px 0 0;
   color: #888;
   font-size: 10px;
 }
 
+.camera-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(250px, 0.8fr);
+  gap: 14px;
+  min-height: 420px;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.camera-image-area {
+  position: relative;
+  min-width: 0;
+  height: 420px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #111;
+}
+
+.calibration-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.live-camera-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  text-align: center;
+  color: #b0b0b0;
+  background: #171717;
+  font-size: 13px;
+  line-height: 1.5;
+}
 
 /* ============================================================
-   MOCK CAMERA HALL
+   CAMERA STATUS LABEL
+   ============================================================ */
+
+.camera-feed-label {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: rgba(0, 0, 0, 0.68);
+  color: #fff;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.camera-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffad1f;
+}
+
+/* ============================================================
+   DETECTION OVERLAY
+   IMPORTANT:
+   pointer-events must remain AUTO so yellow boxes can be clicked.
+   ============================================================ */
+
+.detection-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+/* ============================================================
+   DETECTED SEAT BOXES
+   ============================================================ */
+
+.detected-seat-box {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 0;
+  margin: 0;
+  border: 2px solid #ffad1f;
+  border-radius: 5px;
+  background: rgba(255, 173, 31, 0.10);
+  color: #171717;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 25;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.detected-seat-box:hover {
+  background: rgba(255, 173, 31, 0.24);
+  border-color: #f2a000;
+  box-shadow: 0 0 0 2px rgba(255, 173, 31, 0.12);
+}
+
+.detected-seat-box:focus-visible {
+  outline: 3px solid rgba(47, 143, 91, 0.35);
+  outline-offset: 1px;
+}
+
+.detected-seat-box.detected-mapped {
+  border-color: #2f8f5b;
+  background: rgba(47, 143, 91, 0.16);
+  box-shadow: 0 0 0 2px rgba(47, 143, 91, 0.08);
+}
+
+.detected-seat-box.detected-mapped:hover {
+  background: rgba(47, 143, 91, 0.22);
+}
+
+/* Label displayed over each physical detection. */
+
+.detected-seat-label {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  z-index: 30;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.78);
+  color: #fff;
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Center marker makes overlapping detections easier to see. */
+
+.detected-seat-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ffad1f;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+  z-index: 35;
+  pointer-events: none;
+}
+
+.detected-seat-box.detected-mapped .detected-seat-center {
+  background: #2f8f5b;
+}
+
+/* ============================================================
+   2D SEAT STRUCTURE
+   ============================================================ */
+
+.mini-seat-map {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  border: 1px solid #dedede;
+  border-radius: 12px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.mini-seat-map-title {
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #171717;
+}
+
+.mini-seat-grid {
+  flex: 1;
+  display: grid;
+  gap: 7px;
+  align-content: center;
+  overflow: auto;
+  min-height: 0;
+}
+
+.mini-seat {
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid #d8d8d8;
+  border-radius: 7px;
+  background: #f6f6f6;
+  color: #666;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.mini-seat:hover {
+  border-color: #ffad1f;
+  transform: translateY(-1px);
+}
+
+.mini-seat:focus-visible {
+  outline: 3px solid rgba(255, 173, 31, 0.25);
+  outline-offset: 1px;
+}
+
+.mini-seat.mapped {
+  background: #fff3d6;
+  border-color: #ffad1f;
+  color: #171717;
+  box-shadow: inset 0 0 0 1px rgba(255, 173, 31, 0.16);
+}
+
+.mini-seat-map-help {
+  margin-top: 10px;
+  color: #888;
+  font-size: 9px;
+  text-align: center;
+}
+
+/* ============================================================
+   DETECT BUTTON
+   ============================================================ */
+
+.camera-detect-button {
+  border: 1px solid #171717;
+  border-radius: 7px;
+  padding: 7px 11px;
+  background: #171717;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.camera-detect-button:hover:not(:disabled) {
+  background: #2c2c2c;
+}
+
+.camera-detect-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   LEGACY / FALLBACK MOCK CAMERA CLASSES
+   Kept so older P3 markup does not break.
    ============================================================ */
 
 .mock-camera-hall {
-  /* FIX:
-     Changed from absolute positioning to relative positioning.
-     This lets the container grow naturally with all 72 seats.
-  */
   position: relative;
-
   margin: 38px 24px 34px;
-
   border: 1px solid #ddd;
   border-radius: 8px;
   background: #fff;
-
   padding: 28px 20px 20px;
+  box-sizing: border-box;
 }
 
 .mock-camera-desk {
   width: 46%;
   margin: 0 auto 24px;
   padding: 8px;
-
   border: 1px dashed #cfcfcf;
   border-radius: 6px;
-
   text-align: center;
-
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.8px;
@@ -233,31 +629,23 @@
 }
 
 .mock-camera-seats {
+  width: 100%;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-
-  /* Slightly smaller gap so all rows fit more cleanly */
   gap: 6px;
-
   max-width: 650px;
   margin: 0 auto;
 }
 
 .camera-seat {
   position: relative;
-
-  /* Slightly reduced from 42px */
   min-height: 38px;
-
   border: 1px solid #dedede;
   border-radius: 6px;
-
   background: #fafafa;
   color: #777;
-
   font-size: 9px;
   cursor: pointer;
-
   transition: 0.15s ease;
 }
 
@@ -270,10 +658,8 @@
   position: absolute;
   top: 6px;
   left: 7px;
-
   width: 5px;
   height: 5px;
-
   border-radius: 50%;
   background: #bdbdbd;
 }
@@ -296,16 +682,14 @@
   background: #c5c5c5;
 }
 
-
 /* ============================================================
-   CAMERA LEGEND
+   LEGEND
    ============================================================ */
 
 .camera-legend {
   display: flex;
   gap: 18px;
   margin-top: 12px;
-
   color: #777;
   font-size: 11px;
 }
@@ -319,7 +703,6 @@
 .camera-legend i {
   width: 7px;
   height: 7px;
-
   border-radius: 50%;
   display: inline-block;
 }
@@ -332,9 +715,8 @@
   background: #bdbdbd;
 }
 
-
 /* ============================================================
-   DETAILS
+   DETAILS / CAMERA SELECTOR
    ============================================================ */
 
 .detail-section {
@@ -344,7 +726,6 @@
 .detail-label {
   display: block;
   margin-bottom: 7px;
-
   color: #929292;
   font-size: 9px;
   font-weight: 700;
@@ -354,15 +735,11 @@
 .detail-section select {
   width: 100%;
   height: 38px;
-
   padding: 0 11px;
-
   border: 1px solid #dedede;
   border-radius: 7px;
-
   background: #fff;
   color: #333;
-
   font-size: 12px;
   outline: none;
 }
@@ -371,19 +748,11 @@
   border-color: #ffad1f;
 }
 
-
-/* ============================================================
-   INFO ROW
-   ============================================================ */
-
 .info-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-
   gap: 12px;
-
   padding: 14px 0;
-
   border-top: 1px solid #ededed;
   border-bottom: 1px solid #ededed;
 }
@@ -408,10 +777,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-
   color: #2f9e64;
 }
-
 
 /* ============================================================
    COVERAGE
@@ -425,6 +792,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+  gap: 12px;
 }
 
 .coverage-heading div {
@@ -444,29 +812,24 @@
 .coverage-bar {
   height: 7px;
   margin-top: 11px;
-
   overflow: hidden;
-
   border-radius: 20px;
   background: #ededed;
 }
 
 .coverage-bar div {
   height: 100%;
-
   border-radius: inherit;
   background: #36a269;
-
   transition: width 0.2s ease;
 }
 
 .coverage-section p {
   margin: 8px 0 0;
-
   color: #929292;
   font-size: 10px;
+  line-height: 1.45;
 }
-
 
 /* ============================================================
    CALIBRATION CARD
@@ -474,10 +837,8 @@
 
 .calibration-card {
   padding: 15px;
-
   border: 1px solid #e8e8e8;
   border-radius: 8px;
-
   background: #fafafa;
 }
 
@@ -485,7 +846,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-
+  gap: 10px;
   margin-bottom: 14px;
 }
 
@@ -495,9 +856,7 @@
 
 .calibration-badge {
   padding: 5px 8px;
-
   border-radius: 5px;
-
   font-size: 9px;
   font-weight: 700;
 }
@@ -520,7 +879,6 @@
 .calibration-info {
   display: grid;
   grid-template-columns: 1.4fr 0.8fr 0.8fr;
-
   gap: 10px;
 }
 
@@ -539,7 +897,6 @@
   font-size: 11px;
 }
 
-
 /* ============================================================
    ACTIONS
    ============================================================ */
@@ -547,26 +904,20 @@
 .calibration-actions {
   display: flex;
   gap: 8px;
-
   margin-top: 16px;
 }
 
 .calibration-actions button {
   height: 38px;
-
   border-radius: 7px;
-
   padding: 0 14px;
-
   font-size: 11px;
   font-weight: 600;
-
   cursor: pointer;
 }
 
 .save-calibration {
   flex: 1;
-
   border: 1px solid #171717;
   background: #171717;
   color: #fff;
@@ -591,47 +942,32 @@
   background: #f7f7f7;
 }
 
-
 /* ============================================================
-   FEEDBACK
+   FEEDBACK / NOTE / SUCCESS
    ============================================================ */
 
 .calibration-message {
   display: flex;
   align-items: center;
   justify-content: center;
-
   gap: 7px;
-
   margin-top: 11px;
   padding: 9px 10px;
-
   border-radius: 7px;
-
   background: #f7f7f7;
   color: #555;
-
   font-size: 10px;
+  line-height: 1.4;
 }
-
-
-/* ============================================================
-   PRIVACY / CONTRACT NOTE
-   ============================================================ */
 
 .calibration-note {
   display: flex;
   align-items: flex-start;
-
   gap: 7px;
-
   margin-top: 14px;
   padding-top: 13px;
-
   border-top: 1px solid #ededed;
-
   color: #929292;
-
   font-size: 10px;
   line-height: 1.5;
 }
@@ -639,32 +975,20 @@
 .calibration-note .privacy-dot {
   width: 6px;
   height: 6px;
-
   margin-top: 4px;
-
   flex-shrink: 0;
-
   border-radius: 50%;
   background: #36a269;
 }
 
-
-/* ============================================================
-   SUCCESS
-   ============================================================ */
-
 .calibration-success {
   display: flex;
   align-items: center;
-
   gap: 11px;
-
   margin-top: 16px;
   padding: 13px 15px;
-
   border: 1px solid #dcebe2;
   border-radius: 8px;
-
   background: #f6fbf8;
 }
 
@@ -672,240 +996,117 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
   width: 25px;
   height: 25px;
-
+  flex-shrink: 0;
   border-radius: 50%;
-
   background: #36a269;
   color: #fff;
-
   font-size: 13px;
   font-weight: 700;
 }
 
 .calibration-success strong {
   display: block;
-
   margin-bottom: 3px;
-
   font-size: 11px;
 }
 
 .calibration-success p {
   margin: 0;
-
   color: #777;
   font-size: 10px;
 }
 
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+.calibration-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.secondary-operation-button,
+.primary-operation-button {
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary-operation-button {
+  border: 1px solid #dedede;
+  background: #fff;
+  color: #444;
+}
+
+.secondary-operation-button:hover {
+  background: #f7f7f7;
+}
+
+.primary-operation-button {
+  border: 1px solid #171717;
+  background: #171717;
+  color: #fff;
+}
+
+.primary-operation-button:hover:not(:disabled) {
+  background: #2c2c2c;
+}
+
+.primary-operation-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
 
-@media (max-width: 1050px) {
-
+@media (max-width: 1100px) {
   .calibration-layout {
     grid-template-columns: 1fr;
   }
 
-  .camera-preview {
-    min-height: 650px;
+  .camera-stage {
+    grid-template-columns: minmax(0, 1.65fr) minmax(230px, 0.8fr);
   }
-
 }
 
+@media (max-width: 900px) {
+  .camera-stage {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .camera-image-area {
+    height: 420px;
+  }
+
+  .mini-seat-map {
+    min-height: 260px;
+  }
+}
 
 @media (max-width: 700px) {
-
   .camera-calibration-page {
-    padding: 25px 18px 35px;
+    width: calc(100% - 24px);
+    padding: 22px 0 32px;
   }
 
   .calibration-header {
     flex-direction: column;
   }
 
-  .mock-camera-seats {
-    gap: 5px;
-  }
-
-  .camera-seat {
-    min-height: 34px;
-    font-size: 7px;
-  }
-
+  .hall-config-inputs,
   .info-row,
   .calibration-info {
-    grid-template-columns: 1fr;
-  }
-
-}
-/* ============================================================
-   HALL CONFIGURATION
-   ============================================================ */
-
-.hall-config-card {
-  margin-bottom: 18px;
-  padding: 15px;
-
-  border: 1px solid #e8e8e8;
-  border-radius: 8px;
-
-  background: #fafafa;
-}
-
-.hall-config-header {
-  margin-bottom: 14px;
-}
-
-.hall-config-header h3 {
-  margin: 4px 0 4px;
-
-  font-size: 15px;
-}
-
-.hall-config-header p {
-  margin: 0;
-
-  color: #929292;
-  font-size: 10px;
-  line-height: 1.5;
-}
-
-
-/* ============================================================
-   CONFIGURATION INPUTS
-   ============================================================ */
-
-.hall-config-inputs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.hall-config-inputs div {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.hall-config-inputs label {
-  color: #777;
-  font-size: 10px;
-  font-weight: 600;
-}
-
-.hall-config-inputs input {
-  width: 100%;
-  height: 36px;
-
-  box-sizing: border-box;
-
-  padding: 0 10px;
-
-  border: 1px solid #dedede;
-  border-radius: 7px;
-
-  background: #fff;
-  color: #333;
-
-  font-size: 12px;
-  outline: none;
-}
-
-.hall-config-inputs input:focus {
-  border-color: #ffad1f;
-}
-
-
-/* ============================================================
-   CONFIGURATION SUMMARY
-   ============================================================ */
-
-.hall-config-summary {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-
-  margin-top: 12px;
-
-  border-top: 1px solid #e8e8e8;
-  border-bottom: 1px solid #e8e8e8;
-}
-
-.hall-config-summary div {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-
-  padding: 10px;
-
-  text-align: center;
-}
-
-.hall-config-summary div + div {
-  border-left: 1px solid #e8e8e8;
-}
-
-.hall-config-summary span {
-  color: #929292;
-  font-size: 9px;
-}
-
-.hall-config-summary strong {
-  color: #171717;
-  font-size: 15px;
-}
-
-
-/* ============================================================
-   GENERATE BUTTON
-   ============================================================ */
-
-.generate-layout-btn {
-  width: 100%;
-  height: 36px;
-
-  margin-top: 12px;
-
-  border: 1px solid #dedede;
-  border-radius: 7px;
-
-  background: #fff;
-  color: #333;
-
-  font-size: 11px;
-  font-weight: 700;
-
-  cursor: pointer;
-
-  transition: 0.15s ease;
-}
-
-.generate-layout-btn:hover {
-  border-color: #ffad1f;
-  background: #fffaf0;
-}
-
-
-/* ============================================================
-   DYNAMIC GRID SUPPORT
-   ============================================================ */
-
-.mock-camera-seats {
-  width: 100%;
-}
-
-
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
-
-@media (max-width: 700px) {
-
-  .hall-config-inputs {
     grid-template-columns: 1fr;
   }
 
@@ -913,4 +1114,64 @@
     grid-template-columns: repeat(3, 1fr);
   }
 
+  .camera-image-area {
+    height: 330px;
+  }
+
+  .camera-stage {
+    padding: 8px;
+  }
+
+  .camera-overlay {
+    font-size: 8px;
+  }
+
+  .detected-seat-label {
+    font-size: 8px;
+    padding: 2px 4px;
+  }
+
+  .mini-seat {
+    min-height: 34px;
+    font-size: 9px;
+  }
+
+  .calibration-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+.detected-seat-box.detected-selected {
+  border-color: #2f8f5b;
+  background: rgba(47, 143, 91, 0.22);
+  box-shadow:
+    0 0 0 3px rgba(47, 143, 91, 0.18);
+}
+
+.detected-seat-box.detected-selected
+.detected-seat-center {
+  background: #2f8f5b;
+  transform: translate(-50%, -50%) scale(1.25);
+}
+/* ============================================================
+   MAPPED / SELECTED SEAT HIGHLIGHT
+   ============================================================ */
+
+.detected-seat-box.detected-selected,
+.detected-seat-box.detected-mapped {
+  border-color: #2f8f5b;
+  background: rgba(47, 143, 91, 0.20);
+  box-shadow: 0 0 0 3px rgba(47, 143, 91, 0.16);
+}
+
+.detected-seat-box.detected-selected .detected-seat-center,
+.detected-seat-box.detected-mapped .detected-seat-center {
+  background: #2f8f5b;
+}
+
+.mini-seat.mapped {
+  background: #eef8f2;
+  border-color: #2f8f5b;
+  color: #246d45;
+  box-shadow: inset 0 0 0 1px rgba(47, 143, 91, 0.12);
 }

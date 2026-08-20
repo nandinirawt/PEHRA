@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./CameraCalibration.css";
+const CALIBRATION_API =
+  "http://127.0.0.1:8011";
 
 /*
  * ============================================================
@@ -22,8 +24,10 @@ import "./CameraCalibration.css";
  * - coverage
  * - calibration status
  *
- * V1:
- * - No real camera/CV connection
+ * Prototype:
+ * - Demo classroom image camera feed supported
+ * - Live browser camera supported when permission is available
+ * - Seat detection uses the existing P6 calibration detector API
  * - Configuration is shared through localStorage
  *
  * ============================================================
@@ -158,6 +162,20 @@ function CameraCalibration({ onProceedToPreCheck }) {
 
   const [mappedSeats, setMappedSeats] =
     useState([]);
+    const [selectedSeatId, setSelectedSeatId] =
+  useState(null);
+
+  const [cameraMode, setCameraMode] =
+    useState("demo");
+    const [detectedSeats, setDetectedSeats] = useState([]);
+const [detectionLoading, setDetectionLoading] = useState(false);
+const [detectionError, setDetectionError] = useState("");
+
+  const [videoError, setVideoError] =
+    useState(false);
+
+  const liveVideoRef =
+    useRef(null);
 
 
   /* ==========================================================
@@ -171,90 +189,230 @@ function CameraCalibration({ onProceedToPreCheck }) {
     useState(false);
 
 
+  const detectClassroomSeats = async () => {
+  try {
+    setDetectionLoading(true);
+    setDetectionError("");
+
+    const imageBlob = await fetch(
+      "/calibration/classroom.jpg"
+    ).then((response) => {
+      if (!response.ok) {
+        throw new Error(
+          "Classroom demo image could not be loaded."
+        );
+      }
+
+      return response.blob();
+    });
+
+    const formData = new FormData();
+
+    formData.append(
+      "file",
+      imageBlob,
+      "classroom.jpg"
+    );
+
+   const response = await fetch(
+  "http://127.0.0.1:8001/calibration/detect",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Seat detection failed: ${response.status}`
+      );
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(
+        result.error ||
+        "Seat detection failed."
+      );
+    }
+
+    setDetectedSeats(
+      result.seats || []
+    );
+
+  } catch (error) {
+    console.error(
+      "Seat detection error:",
+      error
+    );
+
+    setDetectedSeats([]);
+
+    setDetectionError(
+      error.message ||
+      "Unable to detect seats."
+    );
+
+  } finally {
+    setDetectionLoading(false);
+  }
+};
+
+  /* ==========================================================
+     LIVE CAMERA
+  ========================================================== */
+
+  useEffect(() => {
+
+    let stream = null;
+
+    if (cameraMode !== "live") {
+      return undefined;
+    }
+
+    if (
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
+      setActionMessage(
+        "Live camera is not supported by this browser."
+      );
+      return undefined;
+    }
+
+    const startLiveCamera = async () => {
+      try {
+
+        setActionMessage(
+          "Requesting camera permission..."
+        );
+
+        stream =
+          await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+          });
+
+        if (liveVideoRef.current) {
+          liveVideoRef.current.srcObject =
+            stream;
+        }
+
+        setActionMessage(
+          "Live camera connected."
+        );
+
+      } catch (error) {
+
+        console.error(
+          "Unable to access live camera:",
+          error
+        );
+
+        setActionMessage(
+          "Could not access the camera. Check browser camera permission."
+        );
+      }
+    };
+
+    startLiveCamera();
+
+    return () => {
+
+      if (stream) {
+        stream.getTracks().forEach((track) => {
+          track.stop();
+        });
+      }
+
+      if (liveVideoRef.current) {
+        liveVideoRef.current.srcObject =
+          null;
+      }
+    };
+
+  }, [cameraMode]);
+
+
   /* ==========================================================
      LOAD EXAM CONFIGURATION
   ========================================================== */
 
   useEffect(() => {
 
-    try {
+  try {
 
-      const savedConfig =
-        localStorage.getItem(
-          "pehraExamConfig"
-        );
-
-      if (!savedConfig) {
-
-        setExamConfig(null);
-        setAllSeats([]);
-        setMappedSeats([]);
-
-        return;
-      }
-
-
-      const parsedConfig =
-        JSON.parse(savedConfig);
-
-
-      const totalSeats =
-        Number(parsedConfig.totalSeats) || 0;
-
-      const columnsPerRow =
-        Number(parsedConfig.seatsPerRow) || 0;
-
-
-      if (
-        totalSeats <= 0 ||
-        columnsPerRow <= 0
-      ) {
-
-        setExamConfig(null);
-        setAllSeats([]);
-        setMappedSeats([]);
-
-        return;
-      }
-
-
-      const seats =
-        generateSeats(
-          totalSeats,
-          columnsPerRow
-        );
-
-
-      setExamConfig(parsedConfig);
-
-      setAllSeats(seats);
-
-      /*
-       * V1 starts with all configured seats mapped.
-       * The invigilator can click individual seats
-       * to unmap them.
-       */
-
-      setMappedSeats(
-        seats.map(
-          (seat) => seat.seat_id
-        )
+    const savedConfig =
+      localStorage.getItem(
+        "pehraExamConfig"
       );
 
-
-    } catch (error) {
-
-      console.error(
-        "Unable to load PEHRA exam configuration:",
-        error
-      );
+    if (!savedConfig) {
 
       setExamConfig(null);
       setAllSeats([]);
       setMappedSeats([]);
+
+      return;
     }
 
-  }, []);
+    const parsedConfig =
+      JSON.parse(savedConfig);
+
+    const totalSeats =
+      Number(parsedConfig.totalSeats) || 0;
+
+    const columnsPerRow =
+      Number(parsedConfig.seatsPerRow) || 0;
+
+    if (
+      totalSeats <= 0 ||
+      columnsPerRow <= 0
+    ) {
+
+      setExamConfig(null);
+      setAllSeats([]);
+      setMappedSeats([]);
+
+      return;
+    }
+
+    const seats =
+      generateSeats(
+        totalSeats,
+        columnsPerRow
+      );
+
+    setExamConfig(parsedConfig);
+
+    setAllSeats(seats);
+
+    // Start with no seats mapped.
+    setMappedSeats([]);
+
+  } catch (error) {
+
+    console.error(
+      "Unable to load PEHRA exam configuration:",
+      error
+    );
+
+    setExamConfig(null);
+    setAllSeats([]);
+    setMappedSeats([]);
+  }
+
+}, []);
+useEffect(() => {
+
+  if (!examConfig) {
+    return;
+  }
+
+  detectClassroomSeats();
+
+}, [examConfig]);
 
 
   /* ==========================================================
@@ -283,8 +441,6 @@ function CameraCalibration({ onProceedToPreCheck }) {
           )
         : 0
     );
-
-
   /* ==========================================================
      COVERAGE
   ========================================================== */
@@ -308,7 +464,25 @@ function CameraCalibration({ onProceedToPreCheck }) {
     mappedSeats,
     allSeats,
   ]);
+const expectedSeatCount =
+  allSeats.length;
 
+const detectedSeatCount =
+  detectedSeats.length;
+
+const detectionCoverage =
+  expectedSeatCount > 0
+    ? Math.round(
+        (detectedSeatCount /
+          expectedSeatCount) *
+          100
+      )
+    : 0;
+
+const detectionStatus =
+  detectionCoverage === 100
+    ? "matched"
+    : "attention";
 
   /* ==========================================================
      CALIBRATION STATUS
@@ -348,134 +522,154 @@ function CameraCalibration({ onProceedToPreCheck }) {
      TOGGLE SEAT MAPPING
   ========================================================== */
 
-  const toggleSeat = (seatId) => {
+const toggleSeat = (seatId) => {
 
-    setIsSaved(false);
+  setIsSaved(false);
+  setActionMessage("");
 
-    setActionMessage("");
+  const alreadyMapped =
+    mappedSeats.includes(seatId);
+
+  setSelectedSeatId(
+    alreadyMapped ? null : seatId
+  );
+
+  setMappedSeats((previous) => {
+
+    if (alreadyMapped) {
+      return previous.filter(
+        (id) => id !== seatId
+      );
+    }
+
+    return [
+      ...previous,
+      seatId,
+    ];
+  });
+};
 
 
-    setMappedSeats((previous) => {
-
-      if (
-        previous.includes(seatId)
-      ) {
-
-        return previous.filter(
-          (id) =>
-            id !== seatId
-        );
-      }
-
-
-      return [
-        ...previous,
-        seatId,
-      ];
-
-    });
-
-  };
+const isSeatMapped = (seatId) => {
+  return mappedSeats.includes(seatId);
+};
 
 
   /* ==========================================================
      SAVE CALIBRATION
   ========================================================== */
 
-  const saveCalibration = () => {
+     const saveCalibration = async () => {
 
-    if (
-      allSeats.length === 0
-    ) {
+  if (allSeats.length === 0) {
+    setActionMessage(
+      "No exam hall configuration found. Please complete Exam Setup first."
+    );
+    return;
+  }
 
-      setActionMessage(
-        "No exam hall configuration found. Please complete Exam Setup first."
-      );
+  if (mappedSeats.length === 0) {
+    setActionMessage(
+      "Please map at least one seat before saving calibration."
+    );
+    return;
+  }
 
-      return;
+  try {
+    setActionMessage("Saving calibration...");
+    setIsSaved(false);
+
+    // Convert P3 IDs: A-01 -> A01
+    const backendSeatIds = mappedSeats.map(
+      (seatId) => seatId.replace("-", "")
+    );
+
+    // Save camera -> zone -> seats
+    const mappingResponse = await fetch(
+      `${CALIBRATION_API}/api/calibration/mapping`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          camera_id: selectedCamera.camera_id,
+          zone_id: selectedCamera.zone,
+          seat_ids: backendSeatIds,
+          bbox: [0, 0, 0, 0],
+        }),
+      }
+    );
+
+    if (!mappingResponse.ok) {
+      const errorData = await mappingResponse.json();
+
+      const message =
+        errorData?.detail?.message ||
+        "Unable to save calibration mapping.";
+
+      throw new Error(message);
     }
 
+    // Ask backend to validate the complete camera mapping
+    const validationResponse = await fetch(
+      `${CALIBRATION_API}/api/calibration/${encodeURIComponent(
+        selectedCamera.camera_id
+      )}/validate`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          rows: rows,
+          columns: columnsPerRow,
+          mapped_seats: backendSeatIds,
+        }),
+      }
+    );
 
-    if (
-      coverage === 0
-    ) {
-
-      setActionMessage(
-        "Please map at least one seat before saving calibration."
+    if (!validationResponse.ok) {
+      throw new Error(
+        "Calibration validation failed."
       );
-
-      return;
     }
 
+    const validation =
+      await validationResponse.json();
+
+    if (validation.status !== "calibrated") {
+      setActionMessage(
+        `Calibration requires attention. Coverage: ${validation.coverage_percentage}%`
+      );
+      return;
+    }
 
     setIsSaved(true);
-
+    localStorage.setItem(
+  "pehraCalibrationComplete",
+  "true"
+);
 
     setActionMessage(
       `Calibration saved for ${selectedCamera.camera_id}.`
     );
 
-
-    /*
-     * Keep the hall configuration in the format
-     * already consumed by LiveMonitor.jsx.
-     */
-
-    localStorage.setItem(
-      "pehraHallConfig",
-      JSON.stringify({
-
-        total_seats:
-          totalSeats,
-
-        columns_per_row:
-          columnsPerRow,
-
-        rows:
-          rows,
-
-        seats:
-          allSeats,
-
-      })
+  } catch (error) {
+    console.error(
+      "Calibration save failed:",
+      error
     );
 
+    setIsSaved(false);
 
-    /*
-     * Store the camera calibration separately.
-     * This will be useful when the backend/WebSocket
-     * is introduced in V2.
-     */
-
-    localStorage.setItem(
-      "pehraCalibration",
-      JSON.stringify({
-
-        camera_id:
-          calibration.camera_id,
-
-        zone:
-          calibration.zone,
-
-        seat_ids:
-          calibration.seat_ids,
-
-        coverage:
-          calibration.coverage,
-
-        status:
-          calibration.status,
-
-      })
+    setActionMessage(
+      error.message ||
+      "Unable to save calibration."
     );
-
-
-    console.log(
-      "PEHRA CALIBRATION:",
-      calibration
-    );
-
-  };
+  }
+};
+      
 
 
   /* ==========================================================
@@ -487,6 +681,9 @@ function CameraCalibration({ onProceedToPreCheck }) {
     setMappedSeats([]);
 
     setIsSaved(false);
+    localStorage.removeItem(
+  "pehraCalibrationComplete"
+);
 
     setActionMessage(
       "Calibration reset. Select the seats covered by this camera."
@@ -746,97 +943,251 @@ function CameraCalibration({ onProceedToPreCheck }) {
           </div>
 
 
-          {/* CAMERA MOCK VIEW */}
+          {/* CAMERA FEED */}
+
+          <div className="camera-mode-switch">
+
+            <button
+              type="button"
+              className={
+                cameraMode === "demo"
+                  ? "active"
+                  : ""
+              }
+              onClick={() => {
+                setCameraMode("demo");
+                setVideoError(false);
+              }}
+            >
+              Demo Video
+            </button>
+
+            <button
+              type="button"
+              className={
+                cameraMode === "live"
+                  ? "active"
+                  : ""
+              }
+              onClick={() => {
+                setCameraMode("live");
+                setVideoError(false);
+              }}
+            >
+              Live Camera
+            </button>
+
+          </div>
 
           <div className="camera-preview">
 
-            <div className="camera-overlay">
+  <div className="camera-overlay">
+    <span>
+      {cameraMode === "demo"
+        ? "DEMO CAMERA VIEW"
+        : "LIVE CAMERA VIEW"}
+    </span>
 
-              <span>
-                LIVE CAMERA VIEW
-              </span>
+    <span>
+      {selectedCamera.zone}
+    </span>
+  </div>
 
-              <span>
-                {selectedCamera.zone}
-              </span>
+  <div className="camera-stage">
 
-            </div>
+    {/* REAL / DEMO CAMERA IMAGE */}
+    <div className="camera-image-area">
+
+      {cameraMode === "demo" ? (
+        <img
+          className="calibration-video"
+          src="/calibration/classroom.jpg"
+          alt="Classroom camera preview"
+          onError={() => setVideoError(true)}
+          onLoad={() => setVideoError(false)}
+        />
+      ) : (
+        <video
+          ref={liveVideoRef}
+          className="calibration-video"
+          autoPlay
+          muted
+          playsInline
+        />
+      )}
+
+      {videoError && cameraMode === "demo" && (
+        <div className="live-camera-placeholder">
+          Demo classroom image not found.
+          <br />
+          Add it to:
+          frontend/public/calibration/classroom.jpg
+        </div>
+      )}
+
+      {/* Detection boxes */}
+      <div className="detection-overlay">
+
+{detectedSeats.map(
+  (seat, index) => {
+
+    const imageWidth = 1536;
+    const imageHeight = 1024;
+
+    const [
+      x1,
+      y1,
+      x2,
+      y2
+    ] = seat.bbox;
+
+    const left =
+      (x1 / imageWidth) * 100;
+
+    const top =
+      (y1 / imageHeight) * 100;
+
+    const width =
+      ((x2 - x1) / imageWidth) * 100;
+
+    const height =
+      ((y2 - y1) / imageHeight) * 100;
+
+  const logicalSeat =
+  allSeats[index]?.seat_id ||
+  seat.seat_id ||
+  seat.label;
+
+const isMapped =
+  mappedSeats.includes(
+    logicalSeat
+  );
+const isSelected =
+  selectedSeatId === logicalSeat;
+
+    return (
+      <button
+        key={`detected-${logicalSeat}`}
+        type="button"
+       className={`detected-seat-box ${
+  isMapped
+    ? "detected-mapped"
+    : ""
+} ${
+  isSelected
+    ? "detected-selected"
+    : ""
+}`}
+        style={{
+          left: `${left}%`,
+          top: `${top}%`,
+          width: `${width}%`,
+          height: `${height}%`,
+        }}
+        onClick={() =>
+          toggleSeat(logicalSeat)
+        }
+      >
+        <span className="detected-seat-label">
+          {logicalSeat}
+        </span>
+        <span className="detected-seat-center"></span>
+      </button>
+    );
+  }
+)}
+
+      </div>
+
+      <div className="camera-feed-label">
+        <span className="camera-status-dot"></span>
+
+        {cameraMode === "demo"
+          ? "Demo Feed"
+          : "Live Camera"}
+      </div>
+
+    </div>
 
 
-            {/* CONFIGURED HALL */}
+    {/* 2D LOGICAL SEAT MAP */}
+    <div className="mini-seat-map">
 
-            <div className="mock-camera-hall">
+      <div className="mini-seat-map-title">
+        Seat Structure
+      </div>
 
-              <div className="mock-camera-desk">
-                INVIGILATOR DESK
-              </div>
+      <div
+        className="mini-seat-grid"
+        style={{
+          gridTemplateColumns:
+            `repeat(${Math.max(
+              columnsPerRow,
+              1
+            )}, 1fr)`,
+        }}
+      >
 
+        {allSeats.map(
+          (seat) => {
 
-              <div
-                className="mock-camera-seats"
-                style={{
-                  gridTemplateColumns:
-                    `repeat(${Math.max(
-                      columnsPerRow,
-                      1
-                    )}, minmax(0, 1fr))`,
-                }}
+         const isMapped =
+  isSeatMapped(
+    seat.seat_id
+  );
+
+            return (
+              <button
+                key={seat.seat_id}
+                className={
+                  `mini-seat ${
+                    isMapped
+                      ? "mapped"
+                      : ""
+                  }`
+                }
+                onClick={() =>
+                  toggleSeat(
+                    seat.seat_id
+                  )
+                }
               >
+                {seat.seat_id}
+              </button>
+            );
+          }
+        )}
 
-                {allSeats.map(
-                  (seat) => {
+      </div>
 
-                    const isMapped =
-                      mappedSeats.includes(
-                        seat.seat_id
-                      );
+      <div className="mini-seat-map-help">
+        Click a seat to map / unmap
+      </div>
 
+    </div>
 
-                    return (
+  </div>
 
-                      <button
-                        key={
-                          seat.seat_id
-                        }
+  <div className="camera-overlay-bottom">
+    <span>
+      {detectionLoading
+        ? "Detecting seats..."
+        : `${detectedSeatCount} seats detected`}
+    </span>
 
-                        className={`camera-seat ${
-                          isMapped
-                            ? "mapped"
-                            : "unmapped"
-                        }`}
+    <button
+      type="button"
+      className="camera-detect-button"
+      onClick={detectClassroomSeats}
+      disabled={detectionLoading}
+    >
+      {detectionLoading
+        ? "Detecting..."
+        : "Detect Seats"}
+    </button>
+  </div>
 
-                        onClick={() =>
-                          toggleSeat(
-                            seat.seat_id
-                          )
-                        }
-                      >
-
-                        <span></span>
-
-                        {seat.seat_id}
-
-                      </button>
-
-                    );
-
-                  }
-                )}
-
-              </div>
-
-            </div>
-
-
-            <div className="camera-overlay-bottom">
-
-              <span>
-                Click a seat to map / unmap
-              </span>
-
-            </div>
-
-          </div>
+</div>
 
 
           {/* CAMERA LEGEND */}
@@ -1028,6 +1379,51 @@ function CameraCalibration({ onProceedToPreCheck }) {
               </div>
 
             </div>
+
+          </div>
+
+
+          {/* ==================================================
+              IMAGE DETECTION
+          ================================================== */}
+
+          <div className="coverage-section">
+
+            <div className="coverage-heading">
+
+              <div>
+                <span className="detail-label">
+                  IMAGE DETECTION
+                </span>
+
+                <strong>
+                  {detectionLoading
+                    ? "Detecting..."
+                    : `${detectedSeatCount} / ${expectedSeatCount}`}
+                </strong>
+              </div>
+
+              <strong>
+                {detectionCoverage}%
+              </strong>
+
+            </div>
+
+            <div className="coverage-bar">
+              <div
+                style={{
+                  width: `${detectionCoverage}%`,
+                }}
+              ></div>
+            </div>
+
+            <p>
+              {detectionError
+                ? detectionError
+                : detectionCoverage === 100
+                  ? "All expected seats were detected in the camera image."
+                  : `${expectedSeatCount - detectedSeatCount} seats still need detection.`}
+            </p>
 
           </div>
 
