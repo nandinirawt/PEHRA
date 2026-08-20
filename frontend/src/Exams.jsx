@@ -5,7 +5,92 @@ import SessionSummary from "./pages/exams/summary/SessionSummary.jsx";
 import { examService } from "./api/examService.js";
 import "./Exams.css";
 
-function ExamCard({ exam, onContinueSetup, onViewSummary, onMonitor, onEditUpcoming }) {
+const statusConfig = {
+  upcoming: {
+    label: "Upcoming",
+    className: "upcoming",
+  },
+  live: {
+    label: "Live",
+    className: "live",
+  },
+  completed: {
+    label: "Completed",
+    className: "completed",
+  },
+  draft: {
+    label: "Draft",
+    className: "draft",
+  },
+};
+
+/*
+ * Convert P4 backend exam format into the format
+ * already expected by the P2 Exams UI.
+ *
+ * P4/backend:
+ *   exam_id
+ *   name
+ *   start_time
+ *   end_time
+ *   total_seats
+ *
+ * P2 UI:
+ *   id
+ *   title
+ *   time
+ *   students
+ */
+function normalizeExam(exam) {
+  return {
+    ...exam,
+
+    id: exam.id ?? exam.exam_id,
+    title: exam.title ?? exam.name ?? "Untitled Examination",
+    subject: exam.subject ?? "General",
+
+    date: exam.date ?? "",
+
+    time:
+      exam.time ??
+      `${exam.start_time ?? ""} – ${exam.end_time ?? ""}`,
+
+    hall: exam.hall ?? "Hall A",
+
+    students:
+      exam.students ??
+      exam.totalSeats ??
+      exam.total_seats ??
+      0,
+
+    totalSeats:
+      exam.totalSeats ??
+      exam.total_seats ??
+      exam.students ??
+      0,
+
+    status: exam.status ?? "draft",
+
+    currentStep:
+      exam.currentStep ??
+      exam.current_step ??
+      1,
+
+    progress:
+      exam.progress ??
+      100,
+  };
+}
+
+function ExamCard({
+  exam,
+  onContinueSetup,
+  onViewSummary,
+  onMonitor,
+  onEditUpcoming,
+}) {
+  const status = statusConfig[exam.status];
+
   return (
     <article className={`exam-card ${exam.status}`}>
       <div className="exam-card-top">
@@ -42,24 +127,50 @@ function ExamCard({ exam, onContinueSetup, onViewSummary, onMonitor, onEditUpcom
       {exam.status === "draft" && (
         <div className="progress-section">
           <div className="progress-header">
-            <span>Setup Progress (Step {exam.currentStep || 1} of 6)</span>
+            <span>
+              Setup Progress (Step {exam.currentStep || 1} of 6)
+            </span>
+
             <strong>{exam.progress || 20}%</strong>
           </div>
 
           <div className="progress-track">
             <div
               className="progress-fill"
-              style={{ width: `${exam.progress || 20}%` }}
+              style={{
+                width: `${exam.progress || 20}%`,
+              }}
             />
           </div>
 
           <div className="progress-steps">
-            <span>{exam.currentStep >= 1 ? "✓ Details" : "○ Details"}</span>
-            <span>{exam.currentStep >= 2 ? "✓ Hall" : "○ Hall"}</span>
-            <span>{exam.currentStep >= 3 ? "✓ Seating" : "○ Seating"}</span>
-            <span>{exam.currentStep >= 4 ? "✓ Cameras" : "○ Cameras"}</span>
-            <span>{exam.currentStep >= 5 ? "✓ Calibration" : "○ Calibration"}</span>
-            <span>{exam.currentStep >= 6 ? "✓ Ready" : "○ Pre-Check"}</span>
+            <span>
+              {exam.currentStep >= 1 ? "✓ Details" : "○ Details"}
+            </span>
+
+            <span>
+              {exam.currentStep >= 2 ? "✓ Hall" : "○ Hall"}
+            </span>
+
+            <span>
+              {exam.currentStep >= 3 ? "✓ Seating" : "○ Seating"}
+            </span>
+
+            <span>
+              {exam.currentStep >= 4 ? "✓ Cameras" : "○ Cameras"}
+            </span>
+
+            <span>
+              {exam.currentStep >= 5
+                ? "✓ Calibration"
+                : "○ Calibration"}
+            </span>
+
+            <span>
+              {exam.currentStep >= 6
+                ? "✓ Ready"
+                : "○ Pre-Check"}
+            </span>
           </div>
         </div>
       )}
@@ -70,7 +181,9 @@ function ExamCard({ exam, onContinueSetup, onViewSummary, onMonitor, onEditUpcom
           <span>✓ Hall & Seating verified</span>
           <span>✓ Camera nodes connected</span>
           <span>✓ 100% Calibrated</span>
-          <span className="text-ready">● Ready to Start</span>
+          <span className="text-ready">
+            ● Ready to Start
+          </span>
         </div>
       )}
 
@@ -88,7 +201,9 @@ function ExamCard({ exam, onContinueSetup, onViewSummary, onMonitor, onEditUpcom
 
           <div>
             <span>Telemetry Pipeline</span>
-            <strong style={{ color: "#10b981" }}>● Active Streaming</strong>
+            <strong style={{ color: "#10b981" }}>
+              ● Active Streaming
+            </strong>
           </div>
         </div>
       )}
@@ -97,18 +212,28 @@ function ExamCard({ exam, onContinueSetup, onViewSummary, onMonitor, onEditUpcom
         <div className="completed-summary">
           <div>
             <span>Integrity Flags</span>
-            <strong>{exam.summary ? exam.summary.totalEvents : 14}</strong>
+            <strong>
+              {exam.summary
+                ? exam.summary.totalEvents
+                : 14}
+            </strong>
           </div>
 
           <div>
             <span>Human Reviewed</span>
-            <strong>{exam.summary ? exam.summary.reviewedCount : 7}</strong>
+            <strong>
+              {exam.summary
+                ? exam.summary.reviewedCount
+                : 7}
+            </strong>
           </div>
 
           <div>
             <span>False Alarms</span>
             <strong style={{ color: "#10b981" }}>
-              {exam.summary ? exam.summary.falseAlarmsCount : 5}
+              {exam.summary
+                ? exam.summary.falseAlarmsCount
+                : 5}
             </strong>
           </div>
         </div>
@@ -124,6 +249,7 @@ function ExamCard({ exam, onContinueSetup, onViewSummary, onMonitor, onEditUpcom
             >
               Review Config
             </button>
+
             <button
               type="button"
               className="primary-button"
@@ -160,7 +286,8 @@ function ExamCard({ exam, onContinueSetup, onViewSummary, onMonitor, onEditUpcom
             className="primary-button wide-button"
             onClick={() => onContinueSetup(exam.id)}
           >
-            Continue Setup (Step {exam.currentStep || 1}) →
+            Continue Setup (Step{" "}
+            {exam.currentStep || 1}) →
           </button>
         )}
       </div>
@@ -169,9 +296,10 @@ function ExamCard({ exam, onContinueSetup, onViewSummary, onMonitor, onEditUpcom
 }
 
 export default function Exams({ onNavigate }) {
-  const [viewMode, setViewMode] = useState("catalog"); // 'catalog' | 'wizard' | 'summary'
+  const [viewMode, setViewMode] = useState("catalog");
   const [wizardExamId, setWizardExamId] = useState(null);
   const [selectedExam, setSelectedExam] = useState(null);
+
   const [examsList, setExamsList] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -181,9 +309,23 @@ export default function Exams({ onNavigate }) {
 
   const loadExams = useCallback(async () => {
     setLoading(true);
-    const data = await examService.getExams();
-    setExamsList(data);
-    setLoading(false);
+
+    try {
+      const data = await examService.getExams();
+
+      const formattedExams = Array.isArray(data)
+        ? data.map(normalizeExam)
+        : [];
+
+      console.log("P4 BACKEND EXAMS:", formattedExams);
+
+      setExamsList(formattedExams);
+    } catch (error) {
+      console.error("Failed to load examinations:", error);
+      setExamsList([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -200,20 +342,36 @@ export default function Exams({ onNavigate }) {
 
   const filteredExams = useMemo(() => {
     return examsList.filter((exam) => {
-      const matchesTab = activeTab === "all" || exam.status === activeTab;
-      const searchText = search.toLowerCase();
-      const matchesSearch =
-        (exam.title && exam.title.toLowerCase().includes(searchText)) ||
-        (exam.subject && exam.subject.toLowerCase().includes(searchText)) ||
-        (exam.hall && exam.hall.toLowerCase().includes(searchText));
-      const matchesFilter = filter === "all" || exam.hall === filter;
+      const matchesTab =
+        activeTab === "all" ||
+        exam.status === activeTab;
 
-      return matchesTab && matchesSearch && matchesFilter;
+      const searchText = search.toLowerCase();
+
+      const matchesSearch =
+        (exam.title &&
+          exam.title.toLowerCase().includes(searchText)) ||
+        (exam.subject &&
+          exam.subject.toLowerCase().includes(searchText)) ||
+        (exam.hall &&
+          exam.hall.toLowerCase().includes(searchText));
+
+      const matchesFilter =
+        filter === "all" ||
+        exam.hall === filter;
+
+      return (
+        matchesTab &&
+        matchesSearch &&
+        matchesFilter
+      );
     });
   }, [examsList, activeTab, search, filter]);
 
   const countByStatus = (status) =>
-    examsList.filter((exam) => exam.status === status).length;
+    examsList.filter(
+      (exam) => exam.status === status
+    ).length;
 
   const handleOpenNewWizard = () => {
     setWizardExamId(null);
@@ -245,6 +403,7 @@ export default function Exams({ onNavigate }) {
   const handleWizardStartLive = (examId) => {
     setViewMode("catalog");
     loadExams();
+
     if (onNavigate) {
       onNavigate("live", examId);
     }
@@ -255,7 +414,6 @@ export default function Exams({ onNavigate }) {
     loadExams();
   };
 
-  // View: Wizard Mode
   if (viewMode === "wizard") {
     return (
       <ExamWizard
@@ -267,7 +425,6 @@ export default function Exams({ onNavigate }) {
     );
   }
 
-  // View: Session Summary Mode
   if (viewMode === "summary") {
     return (
       <SessionSummary
@@ -277,15 +434,19 @@ export default function Exams({ onNavigate }) {
     );
   }
 
-  // View: Catalog Mode
   return (
     <div className="exams-page">
       <section className="exams-header">
         <div>
-          <p className="eyebrow">EXAMINATION MANAGEMENT</p>
+          <p className="eyebrow">
+            EXAMINATION MANAGEMENT
+          </p>
+
           <h1>Exams Hub</h1>
+
           <p className="exams-subtitle">
-            Create, configure, schedule, and review examination sessions and integrity reports.
+            Create, configure, schedule, and review
+            examination sessions and integrity reports.
           </p>
         </div>
 
@@ -300,7 +461,6 @@ export default function Exams({ onNavigate }) {
         </div>
       </section>
 
-      {/* Metrics Overview */}
       <section className="exam-overview">
         <div className="overview-card">
           <span>Total Exams</span>
@@ -309,33 +469,47 @@ export default function Exams({ onNavigate }) {
 
         <div className="overview-card">
           <span>Upcoming</span>
-          <strong>{countByStatus("upcoming")}</strong>
+          <strong>
+            {countByStatus("upcoming")}
+          </strong>
         </div>
 
         <div className="overview-card">
           <span>Live Active</span>
-          <strong style={{ color: "#d97706" }}>{countByStatus("live")}</strong>
+          <strong style={{ color: "#d97706" }}>
+            {countByStatus("live")}
+          </strong>
         </div>
 
         <div className="overview-card">
           <span>Completed Audits</span>
-          <strong style={{ color: "#10b981" }}>{countByStatus("completed")}</strong>
+          <strong style={{ color: "#10b981" }}>
+            {countByStatus("completed")}
+          </strong>
         </div>
       </section>
 
-      {/* Toolbar & Filter Tabs */}
       <section className="exam-toolbar">
         <div className="exam-tabs">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
-              className={`exam-tab ${activeTab === tab.id ? "active" : ""}`}
-              onClick={() => setActiveTab(tab.id)}
+              className={`exam-tab ${
+                activeTab === tab.id
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                setActiveTab(tab.id)
+              }
             >
               {tab.label}
+
               <span className="tab-count">
-                {tab.id === "all" ? examsList.length : countByStatus(tab.id)}
+                {tab.id === "all"
+                  ? examsList.length
+                  : countByStatus(tab.id)}
               </span>
             </button>
           ))}
@@ -346,13 +520,17 @@ export default function Exams({ onNavigate }) {
             type="text"
             placeholder="Search examinations..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
             className="search-input"
           />
 
           <select
             value={filter}
-            onChange={(e) => setFilter(e.target.value)}
+            onChange={(e) =>
+              setFilter(e.target.value)
+            }
             className="hall-filter"
           >
             <option value="all">All Halls</option>
@@ -363,7 +541,6 @@ export default function Exams({ onNavigate }) {
         </div>
       </section>
 
-      {/* Exam Cards Grid */}
       <section className="exams-list">
         {loading ? (
           <div className="empty-state">
@@ -384,8 +561,14 @@ export default function Exams({ onNavigate }) {
         ) : (
           <div className="empty-state">
             <div className="empty-icon">⌕</div>
+
             <h3>No examinations found</h3>
-            <p>Try clearing your search filters or create a new examination.</p>
+
+            <p>
+              Try clearing your search filters or
+              create a new examination.
+            </p>
+
             <button
               type="button"
               className="primary-button"
@@ -398,11 +581,18 @@ export default function Exams({ onNavigate }) {
         )}
       </section>
 
-      {/* Footer utility bar for testing/demo */}
       <footer className="exams-catalog-footer">
         <div className="footer-reset-bar">
-          <span>PEHRA Examination Management • Person 2 Subsystem Active</span>
-          <button type="button" className="btn-reset-demo" onClick={handleResetData}>
+          <span>
+            PEHRA Examination Management • Person 2
+            Subsystem Active
+          </span>
+
+          <button
+            type="button"
+            className="btn-reset-demo"
+            onClick={handleResetData}
+          >
             ↻ Reset Store to Seed Mocks
           </button>
         </div>
