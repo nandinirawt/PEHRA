@@ -3,7 +3,10 @@ from mock.pose_generator import (
     generate_head_turn_sequence,
     generate_hand_anomaly_sequence,
     generate_combined_suspicious_sequence
+   
 )
+
+from client.backend_client import send_pose_data
 
 
 print("Select a mock scenario:")
@@ -16,16 +19,21 @@ choice = input("Enter your choice (1-4): ")
 
 
 if choice == "1":
-    generate_normal_sequence()
+    records = generate_normal_sequence()
 
 elif choice == "2":
-    generate_head_turn_sequence()
+    records = generate_head_turn_sequence()
 
 elif choice == "3":
-    generate_hand_anomaly_sequence()
+    records = generate_hand_anomaly_sequence()
 
 elif choice == "4":
-    generate_combined_suspicious_sequence()
+    records = generate_combined_suspicious_sequence()
 
 else:
     print("Invalid choice. Please enter a number from 1 to 4.")
+    records = []
+
+
+for record in records:
+    send_pose_data(record)

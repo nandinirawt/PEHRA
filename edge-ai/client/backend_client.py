@@ -1,7 +1,7 @@
 import requests
 
 
-BACKEND_URL = None
+BACKEND_URL = "http://127.0.0.1:8000/api/pose"
 
 
 def send_pose_data(pose_data):

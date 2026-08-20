@@ -1,11 +1,13 @@
+
 import cv2
 import mediapipe as mp
 import time
 import sys
 import os
+from datetime import datetime, timezone
 
 
-# Allow importing from the representation folder
+# Allow importing from the edge-ai root folder
 sys.path.append(
     os.path.dirname(
         os.path.dirname(
@@ -14,10 +16,14 @@ sys.path.append(
     )
 )
 
+
 from representation.anonymous_features import (
     get_body_orientation,
-    get_hand_state
+    get_hand_state,
+    get_head_direction
 )
+
+from client.backend_client import send_pose_data
 
 
 POSE_MODEL_PATH = "models/pose_landmarker.task"
@@ -26,6 +32,7 @@ HAND_MODEL_PATH = "models/hand_landmarker.task"
 
 def start_combined_detection():
 
+    # Open webcam
     camera = cv2.VideoCapture(0)
 
     if not camera.isOpened():
@@ -33,7 +40,10 @@ def start_combined_detection():
         return
 
 
-    # MediaPipe classes
+    # =====================================
+    # MEDIAPIPE CLASSES
+    # =====================================
+
     BaseOptions = mp.tasks.BaseOptions
 
     PoseLandmarker = mp.tasks.vision.PoseLandmarker
@@ -45,40 +55,68 @@ def start_combined_detection():
     RunningMode = mp.tasks.vision.RunningMode
 
 
-    # Pose detector configuration
+    # =====================================
+    # POSE DETECTOR CONFIGURATION
+    # =====================================
+
     pose_options = PoseLandmarkerOptions(
         base_options=BaseOptions(
             model_asset_path=POSE_MODEL_PATH
         ),
         running_mode=RunningMode.VIDEO,
-        num_poses=1,
+
+        # Detect up to 3 people
+        num_poses=3,
+
         min_pose_detection_confidence=0.5,
         min_pose_presence_confidence=0.5,
         min_tracking_confidence=0.5
     )
 
 
-    # Hand detector configuration
+    # =====================================
+    # HAND DETECTOR CONFIGURATION
+    # =====================================
+
     hand_options = HandLandmarkerOptions(
         base_options=BaseOptions(
             model_asset_path=HAND_MODEL_PATH
         ),
         running_mode=RunningMode.VIDEO,
-        num_hands=2,
+
+        # Maximum 3 people × 2 hands
+        num_hands=6,
+
         min_hand_detection_confidence=0.5,
         min_hand_presence_confidence=0.5,
         min_tracking_confidence=0.5
     )
 
 
-    # State variables
+    # =====================================
+    # HAND STATE VARIABLES
+    # =====================================
+
     previous_hand_landmarks = None
-    orientation_history = []
     unusual_frames_remaining = 0
 
 
-    print("Combined detection started. Press Q to close.")
+    # =====================================
+    # BACKEND SEND CONFIGURATION
+    # =====================================
 
+    last_send_time = 0
+    SEND_INTERVAL = 1
+
+
+    print("Multi-person combined detection started.")
+    print("Detecting up to 3 people.")
+    print("Press Q to close.")
+
+
+    # =====================================
+    # START DETECTORS
+    # =====================================
 
     with PoseLandmarker.create_from_options(
         pose_options
@@ -90,7 +128,10 @@ def start_combined_detection():
 
         while True:
 
-            # Read webcam frame
+            # =====================================
+            # READ WEBCAM FRAME
+            # =====================================
+
             success, frame = camera.read()
 
             if not success:
@@ -98,11 +139,11 @@ def start_combined_detection():
                 break
 
 
-            # Mirror webcam frame
+            # Mirror webcam
             frame = cv2.flip(frame, 1)
 
 
-            # Convert BGR to RGB
+            # Convert BGR → RGB
             rgb_frame = cv2.cvtColor(
                 frame,
                 cv2.COLOR_BGR2RGB
@@ -116,42 +157,77 @@ def start_combined_detection():
             )
 
 
-            # Timestamp for VIDEO mode
+            # Increasing timestamp for VIDEO mode
             timestamp_ms = int(
                 (time.time() - start_time) * 1000
             )
 
 
-            # Detect pose
+            # =====================================
+            # DETECT POSES
+            # =====================================
+
             pose_result = pose_detector.detect_for_video(
                 mp_image,
                 timestamp_ms
             )
 
 
-            # Detect hands
+            # =====================================
+            # DETECT HANDS
+            # =====================================
+
             hand_result = hand_detector.detect_for_video(
                 mp_image,
                 timestamp_ms
             )
 
 
-            # Default feature values
-            body_orientation = "unknown"
+            # =====================================
+            # EXTRACT FEATURES FOR ALL PEOPLE
+            # =====================================
 
+            person_features = []
 
-            # Extract body orientation
             if pose_result.pose_landmarks:
 
-                pose_landmarks = pose_result.pose_landmarks[0]
+                for person_index, pose_landmarks in enumerate(
+                    pose_result.pose_landmarks
+                ):
 
-                body_orientation = get_body_orientation(
-                    pose_landmarks,
-                    orientation_history
-                )
+                    # Separate orientation history
+                    # for each detected person for now
+                    orientation_history = []
+
+                    # Get head direction
+                    head_direction = get_head_direction(
+                        pose_landmarks
+                    )
 
 
-            # Extract hand state
+                    # Get body orientation
+                    body_orientation = get_body_orientation(
+                        pose_landmarks,
+                        orientation_history
+                    )
+
+
+                    # Store this person's features
+                    person_features.append({
+                        "person_index": person_index + 1,
+                        "head_direction": head_direction,
+                        "body_orientation": body_orientation
+                    })
+
+
+            # =====================================
+            # HAND STATE
+            # =====================================
+            #
+            # At this stage, hands are detected globally.
+            # Person-to-hand matching will be added next.
+            #
+
             hand_state, unusual_frames_remaining = get_hand_state(
                 hand_result.hand_landmarks,
                 previous_hand_landmarks,
@@ -159,8 +235,61 @@ def start_combined_detection():
             )
 
 
-            # Save current hands for next frame
-            previous_hand_landmarks = hand_result.hand_landmarks
+            # Save hands for next frame
+            previous_hand_landmarks = (
+                hand_result.hand_landmarks
+            )
+
+
+            # Add current hand state to each person
+            #
+            # Temporary: same global hand state is shown
+            # until person-hand matching is implemented.
+
+            for person in person_features:
+                person["hand_state"] = hand_state
+
+
+            # =====================================
+            # SEND DATA TO BACKEND
+            # =====================================
+
+            current_time = time.time()
+
+            if (
+                person_features
+                and current_time - last_send_time >= SEND_INTERVAL
+            ):
+
+                print("\nDetected People:")
+
+                for person in person_features:
+
+                    print(person)
+
+                    pose_data = {
+                        "seat_id": f"PERSON-{person['person_index']}",
+                        "timestamp": datetime.now(
+                            timezone.utc
+                        ).isoformat(),
+                        "presence": True,
+                        "confidence": 0.95,
+                        "pose_features": {
+                            "head_direction": person[
+                                "head_direction"
+                            ],
+                            "body_orientation": person[
+                                "body_orientation"
+                            ],
+                            "hand_state": person[
+                                "hand_state"
+                            ]
+                        }
+                    }
+
+                    send_pose_data(pose_data)
+
+                last_send_time = current_time
 
 
             # =====================================
@@ -170,7 +299,7 @@ def start_combined_detection():
             height, width, _ = frame.shape
 
 
-            # Draw pose landmarks
+            # Draw pose landmarks for every person
             if pose_result.pose_landmarks:
 
                 for pose_landmarks in pose_result.pose_landmarks:
@@ -189,7 +318,7 @@ def start_combined_detection():
                         )
 
 
-            # Draw hand landmarks
+            # Draw all detected hands
             if hand_result.hand_landmarks:
 
                 for hand_landmarks in hand_result.hand_landmarks:
@@ -209,34 +338,61 @@ def start_combined_detection():
 
 
             # =====================================
-            # DISPLAY FEATURES
+            # DISPLAY EACH PERSON'S FEATURES
             # =====================================
 
-            cv2.putText(
-                frame,
-                f"Body: {body_orientation}",
-                (20, 40),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (0, 255, 0),
-                2
-            )
+            y_position = 35
+
+            for person in person_features:
+
+                person_number = person["person_index"]
+
+                cv2.putText(
+                    frame,
+                    f"P{person_number} Head: "
+                    f"{person['head_direction']}",
+                    (20, y_position),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 255, 0),
+                    2
+                )
+
+                y_position += 25
+
+                cv2.putText(
+                    frame,
+                    f"P{person_number} Body: "
+                    f"{person['body_orientation']}",
+                    (20, y_position),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 255, 0),
+                    2
+                )
+
+                y_position += 25
+
+                cv2.putText(
+                    frame,
+                    f"P{person_number} Hands: "
+                    f"{person['hand_state']}",
+                    (20, y_position),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 255, 0),
+                    2
+                )
+
+                y_position += 40
 
 
-            cv2.putText(
-                frame,
-                f"Hands: {hand_state}",
-                (20, 80),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (0, 255, 0),
-                2
-            )
+            # =====================================
+            # SHOW WINDOW
+            # =====================================
 
-
-            # Show webcam window
             cv2.imshow(
-                "PEHRA Edge AI - Combined Detection",
+                "PEHRA Edge AI - Multi-Person Detection",
                 frame
             )
 
@@ -246,10 +402,14 @@ def start_combined_detection():
                 break
 
 
-    # Release camera
+    # =====================================
+    # CLEANUP
+    # =====================================
+
     camera.release()
     cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
     start_combined_detection()
+

@@ -86,3 +86,32 @@ def get_hand_state(
         )
 
     return "normal", 0
+def get_head_direction(pose_landmarks):
+    """
+    Estimates head direction using nose position
+    relative to the shoulders.
+    """
+
+    if not pose_landmarks:
+        return "unknown"
+
+    NOSE = 0
+    LEFT_SHOULDER = 11
+    RIGHT_SHOULDER = 12
+
+    nose = pose_landmarks[NOSE]
+    left_shoulder = pose_landmarks[LEFT_SHOULDER]
+    right_shoulder = pose_landmarks[RIGHT_SHOULDER]
+
+    shoulder_center_x = (
+        left_shoulder.x + right_shoulder.x
+    ) / 2
+
+    difference = nose.x - shoulder_center_x
+
+    if difference < -0.04:
+        return "left"
+    elif difference > 0.04:
+        return "right"
+
+    return "center"
