@@ -168,6 +168,16 @@ function CameraCalibration({ onProceedToPreCheck }) {
   const [cameraMode, setCameraMode] =
     useState("demo");
     const [detectedSeats, setDetectedSeats] = useState([]);
+    const detectionCacheRef = useRef({});
+    const detectionHistoryRef = useRef([]);
+    const [detectionImageSize, setDetectionImageSize] =
+  useState({
+    width: 1536,
+    height: 1024,
+  });
+
+const liveDetectionInProgress =
+  useRef(false);
 const [detectionLoading, setDetectionLoading] = useState(false);
 const [detectionError, setDetectionError] = useState("");
 
@@ -258,6 +268,235 @@ const [detectionError, setDetectionError] = useState("");
     setDetectionLoading(false);
   }
 };
+const detectLiveFrame = async () => {
+
+  if (
+    liveDetectionInProgress.current ||
+    !liveVideoRef.current
+  ) {
+    return;
+  }
+
+  const video =
+    liveVideoRef.current;
+
+  if (
+    video.readyState < 2 ||
+    video.videoWidth <= 0 ||
+    video.videoHeight <= 0
+  ) {
+    return;
+  }
+
+  liveDetectionInProgress.current =
+    true;
+
+  try {
+
+    const canvas =
+      document.createElement("canvas");
+
+    canvas.width =
+      video.videoWidth;
+
+    canvas.height =
+      video.videoHeight;
+
+    const context =
+      canvas.getContext("2d");
+
+    if (!context) {
+      return;
+    }
+
+    context.drawImage(
+      video,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+    setDetectionImageSize({
+      width: canvas.width,
+      height: canvas.height,
+    });
+
+    const blob =
+      await new Promise((resolve) => {
+        canvas.toBlob(
+          resolve,
+          "image/jpeg",
+          0.82
+        );
+      });
+
+    if (!blob) {
+      throw new Error(
+        "Unable to capture live camera frame."
+      );
+    }
+
+    const formData =
+      new FormData();
+
+    formData.append(
+      "file",
+      blob,
+      "live-frame.jpg"
+    );
+
+    const response =
+      await fetch(
+        "http://127.0.0.1:8001/calibration/detect",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `Live seat detection failed: ${response.status}`
+      );
+    }
+
+    const result =
+      await response.json();
+
+    if (!result.success) {
+      throw new Error(
+        result.error ||
+        "Unable to detect seats in live camera."
+      );
+    }
+
+   const currentSeats =
+  result.seats || [];
+
+// Save the latest position of every detected seat.
+currentSeats.forEach((seat) => {
+
+  const seatId =
+    seat.seat_id || seat.label;
+
+  if (seatId) {
+    detectionCacheRef.current[seatId] =
+      seat;
+  }
+
+});
+
+// Keep the last 3 detection frames.
+detectionHistoryRef.current.push(
+  currentSeats
+);
+
+if (
+  detectionHistoryRef.current.length > 3
+) {
+  detectionHistoryRef.current.shift();
+}
+
+// Count how many recent frames saw each seat.
+const seatAppearanceCount = {};
+
+detectionHistoryRef.current.forEach(
+  (frameSeats) => {
+
+    frameSeats.forEach((seat) => {
+
+      const seatId =
+        seat.seat_id || seat.label;
+
+      if (!seatId) {
+        return;
+      }
+
+      seatAppearanceCount[seatId] =
+        (seatAppearanceCount[seatId] || 0) + 1;
+
+    });
+
+  }
+);
+
+// Keep seats seen in at least 2 of the last 3 frames.
+const stableSeats =
+  currentSeats.filter((seat) => {
+
+    const seatId =
+      seat.seat_id || seat.label;
+
+    return (
+      seatAppearanceCount[seatId] >= 2
+    );
+
+  });
+
+// IMPORTANT:
+// Once a seat has been mapped, keep its last
+// known box visible even if the next frame misses it.
+mappedSeats.forEach((seatId) => {
+
+  const alreadyVisible =
+    stableSeats.some(
+      (seat) =>
+        (seat.seat_id || seat.label) ===
+        seatId
+    );
+
+  if (alreadyVisible) {
+    return;
+  }
+
+  const cachedSeat =
+    detectionCacheRef.current[seatId];
+
+  if (cachedSeat) {
+    stableSeats.push(cachedSeat);
+  }
+
+});
+
+setDetectedSeats(stableSeats);
+
+setDetectionError("");
+
+  } catch (error) {
+
+    console.error(
+      "Live seat detection error:",
+      error
+    );
+
+    setDetectionError(
+      error.message ||
+      "Unable to detect seats from live camera."
+    );
+
+  } finally {
+
+    liveDetectionInProgress.current =
+      false;
+  }
+};
+useEffect(() => {
+
+  if (cameraMode !== "live") {
+    return undefined;
+  }
+
+  const intervalId =
+    setInterval(() => {
+      detectLiveFrame();
+    }, 1000);
+
+  return () => {
+    clearInterval(intervalId);
+  };
+
+}, [cameraMode]);
 
   /* ==========================================================
      LIVE CAMERA
@@ -954,10 +1193,11 @@ const isSeatMapped = (seatId) => {
                   ? "active"
                   : ""
               }
-              onClick={() => {
-                setCameraMode("demo");
-                setVideoError(false);
-              }}
+             onClick={() => {
+  detectionHistoryRef.current = [];
+  setCameraMode("demo");
+  setVideoError(false);
+}}
             >
               Demo Video
             </button>
@@ -970,9 +1210,10 @@ const isSeatMapped = (seatId) => {
                   : ""
               }
               onClick={() => {
-                setCameraMode("live");
-                setVideoError(false);
-              }}
+  detectionHistoryRef.current = [];
+  setCameraMode("live");
+  setVideoError(false);
+}}
             >
               Live Camera
             </button>
@@ -1003,17 +1244,43 @@ const isSeatMapped = (seatId) => {
           className="calibration-video"
           src="/calibration/classroom.jpg"
           alt="Classroom camera preview"
-          onError={() => setVideoError(true)}
-          onLoad={() => setVideoError(false)}
+          onError={() =>
+  setVideoError(true)
+}
+
+onLoad={(event) => {
+
+  setVideoError(false);
+
+  setDetectionImageSize({
+    width:
+      event.currentTarget.naturalWidth,
+
+    height:
+      event.currentTarget.naturalHeight,
+  });
+
+}}
         />
       ) : (
         <video
-          ref={liveVideoRef}
-          className="calibration-video"
-          autoPlay
-          muted
-          playsInline
-        />
+  ref={liveVideoRef}
+  className="calibration-video"
+  autoPlay
+  muted
+  playsInline
+  onLoadedMetadata={(event) => {
+
+    setDetectionImageSize({
+      width:
+        event.currentTarget.videoWidth,
+
+      height:
+        event.currentTarget.videoHeight,
+    });
+
+  }}
+/>
       )}
 
       {videoError && cameraMode === "demo" && (
@@ -1031,8 +1298,11 @@ const isSeatMapped = (seatId) => {
 {detectedSeats.map(
   (seat, index) => {
 
-    const imageWidth = 1536;
-    const imageHeight = 1024;
+   const imageWidth =
+  detectionImageSize.width;
+
+const imageHeight =
+  detectionImageSize.height;
 
     const [
       x1,

@@ -4,10 +4,46 @@ import { useState } from "react";
 import Dashboard from "./Dashboard.jsx";
 import Exams from "./Exams.jsx";
 import ActiveExamDock from "./ActiveExamDock.jsx";
+import CameraCalibration from "./CameraCalibration.jsx";
+import Login from "./Login.jsx";
 import "./App.css";
 
 function App() {
-  const [page, setPage] = useState("dashboard");
+
+  /* =========================
+     LOGIN
+  ========================== */
+
+  const [isLoggedIn, setIsLoggedIn] =
+    useState(false);
+
+
+  /* =========================
+     PAGE
+  ========================== */
+
+  const [page, setPage] =
+    useState("dashboard");
+
+
+  /* =========================
+     LOGIN SCREEN
+  ========================== */
+
+  if (!isLoggedIn) {
+    return (
+      <Login
+        onLogin={() =>
+          setIsLoggedIn(true)
+        }
+      />
+    );
+  }
+
+
+  /* =========================
+     NAVIGATION
+  ========================== */
 
   return (
     <div className="app">
@@ -15,6 +51,7 @@ function App() {
       {/* =========================
           GLOBAL TOP NAVBAR
       ========================== */}
+
       <header className="navbar">
 
         <div className="brand">
@@ -34,47 +71,89 @@ function App() {
 
         <nav className="nav-links">
 
+          {/* DASHBOARD */}
+
           <button
             className={`nav-link-button ${
-              page === "dashboard" ? "active" : ""
+              page === "dashboard"
+                ? "active"
+                : ""
             }`}
-            onClick={() => setPage("dashboard")}
+            onClick={() =>
+              setPage("dashboard")
+            }
           >
             Dashboard
           </button>
 
 
+          {/* EXAMS */}
+
           <button
             className={`nav-link-button ${
-              page === "exams" ? "active" : ""
+              page === "exams"
+                ? "active"
+                : ""
             }`}
-            onClick={() => setPage("exams")}
+            onClick={() =>
+              setPage("exams")
+            }
           >
             Exams
           </button>
 
 
+          {/* CAMERA CALIBRATION */}
+
           <button
             className={`nav-link-button ${
-              page === "live" ? "active" : ""
+              page === "calibration"
+                ? "active"
+                : ""
             }`}
-            onClick={() => setPage("live")}
+            onClick={() =>
+              setPage("calibration")
+            }
+          >
+            Camera Calibration
+          </button>
+
+
+          {/* LIVE MONITOR */}
+
+          <button
+            className={`nav-link-button ${
+              page === "live"
+                ? "active"
+                : ""
+            }`}
+            onClick={() =>
+              setPage("live")
+            }
           >
             Live Monitor
           </button>
 
 
+          {/* PRIVACY */}
+
           <button
             className={`nav-link-button ${
-              page === "privacy" ? "active" : ""
+              page === "privacy"
+                ? "active"
+                : ""
             }`}
-            onClick={() => setPage("privacy")}
+            onClick={() =>
+              setPage("privacy")
+            }
           >
             Privacy
           </button>
 
         </nav>
 
+
+        {/* RIGHT SIDE */}
 
         <div className="nav-right">
 
@@ -123,17 +202,38 @@ function App() {
       )}
 
 
+      {/* YOUR P6/P3 CALIBRATION PAGE */}
+
+      {page === "calibration" && (
+        <CameraCalibration
+          onProceedToPreCheck={() => {
+            setPage("live");
+          }}
+        />
+      )}
+
+
+      {/* LIVE MONITOR */}
+
       {page === "live" && (
         <LiveMonitorWorkspace />
       )}
 
 
+      {/* PRIVACY */}
+
       {page === "privacy" && (
         <PrivacyCenter />
       )}
+
+
+      {/* ACTIVE EXAM DOCK */}
+
       <ActiveExamDock
-  onMonitor={() => setPage("live")}
-/>
+        onMonitor={() =>
+          setPage("live")
+        }
+      />
 
     </div>
   );
