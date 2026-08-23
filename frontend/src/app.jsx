@@ -105,19 +105,7 @@ function App() {
 
           {/* CAMERA CALIBRATION */}
 
-          <button
-            className={`nav-link-button ${
-              page === "calibration"
-                ? "active"
-                : ""
-            }`}
-            onClick={() =>
-              setPage("calibration")
-            }
-          >
-            Camera Calibration
-          </button>
-
+          
 
           {/* LIVE MONITOR */}
 
