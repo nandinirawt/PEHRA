@@ -1,11 +1,49 @@
+import PrivacyCenter from "./PrivacyCenter";
+import LiveMonitorWorkspace from "./LiveMonitorWorkspace";
 import { useState } from "react";
 import Dashboard from "./Dashboard.jsx";
 import Exams from "./Exams.jsx";
 import ActiveExamDock from "./ActiveExamDock.jsx";
+import CameraCalibration from "./CameraCalibration.jsx";
+import Login from "./Login.jsx";
 import "./App.css";
 
 function App() {
-  const [page, setPage] = useState("dashboard");
+
+  /* =========================
+     LOGIN
+  ========================== */
+
+  const [isLoggedIn, setIsLoggedIn] =
+    useState(false);
+
+
+  /* =========================
+     PAGE
+  ========================== */
+
+  const [page, setPage] =
+    useState("dashboard");
+
+
+  /* =========================
+     LOGIN SCREEN
+  ========================== */
+
+  if (!isLoggedIn) {
+    return (
+      <Login
+        onLogin={() =>
+          setIsLoggedIn(true)
+        }
+      />
+    );
+  }
+
+
+  /* =========================
+     NAVIGATION
+  ========================== */
 
   return (
     <div className="app">
@@ -13,9 +51,11 @@ function App() {
       {/* =========================
           GLOBAL TOP NAVBAR
       ========================== */}
+
       <header className="navbar">
 
         <div className="brand">
+
           <img
             src="/pehra-logo.png"
             alt="PEHRA"
@@ -25,43 +65,75 @@ function App() {
           <span className="brand-name">
             PEHRA
           </span>
+
         </div>
 
 
         <nav className="nav-links">
 
+          {/* DASHBOARD */}
+
           <button
             className={`nav-link-button ${
-              page === "dashboard" ? "active" : ""
+              page === "dashboard"
+                ? "active"
+                : ""
             }`}
-            onClick={() => setPage("dashboard")}
+            onClick={() =>
+              setPage("dashboard")
+            }
           >
             Dashboard
           </button>
 
+
+          {/* EXAMS */}
+
           <button
             className={`nav-link-button ${
-              page === "exams" ? "active" : ""
+              page === "exams"
+                ? "active"
+                : ""
             }`}
-            onClick={() => setPage("exams")}
+            onClick={() =>
+              setPage("exams")
+            }
           >
             Exams
           </button>
 
+
+          {/* CAMERA CALIBRATION */}
+
+          
+
+          {/* LIVE MONITOR */}
+
           <button
             className={`nav-link-button ${
-              page === "live" ? "active" : ""
+              page === "live"
+                ? "active"
+                : ""
             }`}
-            onClick={() => setPage("live")}
+            onClick={() =>
+              setPage("live")
+            }
           >
             Live Monitor
           </button>
 
+
+          {/* PRIVACY */}
+
           <button
             className={`nav-link-button ${
-              page === "privacy" ? "active" : ""
+              page === "privacy"
+                ? "active"
+                : ""
             }`}
-            onClick={() => setPage("privacy")}
+            onClick={() =>
+              setPage("privacy")
+            }
           >
             Privacy
           </button>
@@ -69,12 +141,15 @@ function App() {
         </nav>
 
 
+        {/* RIGHT SIDE */}
+
         <div className="nav-right">
 
           <button className="notification">
             <span className="notification-dot"></span>
             ◌
           </button>
+
 
           <div className="profile">
 
@@ -109,26 +184,44 @@ function App() {
         <Dashboard />
       )}
 
+
       {page === "exams" && (
         <Exams />
       )}
 
-      {page === "live" && (
-        <main className="placeholder-page">
-          <h1>Live Monitor</h1>
-          <p>Live monitoring will be built next.</p>
-        </main>
+
+      {/* YOUR P6/P3 CALIBRATION PAGE */}
+
+      {page === "calibration" && (
+        <CameraCalibration
+          onProceedToPreCheck={() => {
+            setPage("live");
+          }}
+        />
       )}
 
-      {page === "privacy" && (
-        <main className="placeholder-page">
-          <h1>Privacy Center</h1>
-          <p>Privacy page will be built next.</p>
-        </main>
+
+      {/* LIVE MONITOR */}
+
+      {page === "live" && (
+        <LiveMonitorWorkspace />
       )}
+
+
+      {/* PRIVACY */}
+
+      {page === "privacy" && (
+        <PrivacyCenter />
+      )}
+
+
+      {/* ACTIVE EXAM DOCK */}
+
       <ActiveExamDock
-  onMonitor={() => setPage("live")}
-/>
+        onMonitor={() =>
+          setPage("live")
+        }
+      />
 
     </div>
   );
