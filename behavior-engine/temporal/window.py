@@ -1,92 +1,49 @@
-import sys
-from pathlib import Path
+﻿from collections import defaultdict
+from typing import Dict, Any, List
+from config import WINDOW_DURATION_SECONDS, PERSISTENCE_MIN_OCCURRENCES
 
-sys.path.append(str(Path(__file__).resolve().parents[1]))
+class TemporalWindowTracker:
+    def __init__(self, window_size: float = WINDOW_DURATION_SECONDS):
+        self.window_size = window_size
+        self.seat_windows: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
 
-from collections import defaultdict
-from typing import Dict, List, Any
+    def prune_old_signals(self, seat_id: str, current_time: float):
+        cutoff = current_time - self.window_size
+        self.seat_windows[seat_id] = [
+            sig for sig in self.seat_windows[seat_id] if sig["timestamp"] >= cutoff
+        ]
 
+    def add_signals(self, seat_id: str, signals: List[Dict[str, Any]], current_time: float):
+        self.prune_old_signals(seat_id, current_time)
+        for sig in signals:
+            self.seat_windows[seat_id].append(sig)
 
-class BehaviorWindow:
-    """
-    Keeps recent behavior events for each seat.
+    def get_persistent_signals(self, seat_id: str, current_time: float) -> Dict[str, Any]:
+        self.prune_old_signals(seat_id, current_time)
+        window = self.seat_windows[seat_id]
 
-    This is a simple prototype temporal window.
-    Later it can be replaced with timestamp-based
-    sliding-window logic from real POSE_DATA.
-    """
+        signal_counts = defaultdict(int)
+        signal_confidences = defaultdict(list)
 
-    def __init__(self, max_events: int = 5):
-        self.max_events = max_events
-        self.events = defaultdict(list)
+        for item in window:
+            sig_name = item["signal"]
+            signal_counts[sig_name] += 1
+            signal_confidences[sig_name].append(item["confidence"])
 
-    def add_event(self, event: Dict[str, Any]) -> None:
-        seat_id = event["seat_id"]
+        qualified_signals = {}
+        for sig_name, count in signal_counts.items():
+            required = PERSISTENCE_MIN_OCCURRENCES if sig_name == "repeated_head_turns" else 2
+            if count >= required:
+                confs = signal_confidences[sig_name]
+                avg_conf = sum(confs) / len(confs) if confs else 0.8
+                qualified_signals[sig_name] = {
+                    "count": count,
+                    "avg_confidence": avg_conf
+                }
 
-        self.events[seat_id].append(event)
+        has_temporal_pattern = len(window) >= (PERSISTENCE_MIN_OCCURRENCES * 2)
 
-        # Keep only the most recent events
-        if len(self.events[seat_id]) > self.max_events:
-            self.events[seat_id].pop(0)
-
-    def get_events(self, seat_id: str) -> List[Dict[str, Any]]:
-        return self.events.get(seat_id, [])
-
-    def count_event_type(
-        self,
-        seat_id: str,
-        event_type: str
-    ) -> int:
-        return sum(
-            1
-            for event in self.get_events(seat_id)
-            if event.get("event_type") == event_type
-        )
-
-    def has_persistent_behavior(
-        self,
-        seat_id: str,
-        event_type: str,
-        minimum_occurrences: int = 3
-    ) -> bool:
-        return (
-            self.count_event_type(seat_id, event_type)
-            >= minimum_occurrences
-        )
-
-
-if __name__ == "__main__":
-    from events.mock_event_generator import generate_scenario
-
-    window = BehaviorWindow(max_events=5)
-
-    # Three repeated head-turn events for B-04
-    for _ in range(3):
-        event = generate_scenario(
-            "repeated_head_turns",
-            exam_id="EXAM-01",
-            seat_id="B-04",
-        )
-
-        window.add_event(event)
-
-    print("Recent events:")
-    print(window.get_events("B-04"))
-
-    print("\nHead turn count:")
-    print(
-        window.count_event_type(
-            "B-04",
-            "repeated_head_turns"
-        )
-    )
-
-    print("\nPersistent behavior:")
-    print(
-        window.has_persistent_behavior(
-            "B-04",
-            "repeated_head_turns",
-            minimum_occurrences=3
-        )
-    )
-    from events.mock_event_generator import generate_scenario
+        return {
+            "qualified_signals": qualified_signals,
+            "has_temporal_pattern": has_temporal_pattern
+        }
