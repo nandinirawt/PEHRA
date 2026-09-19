@@ -1,0 +1,916 @@
+/* ============================================================
+   PEHRA — CAMERA → SEAT CALIBRATION
+   ============================================================ */
+
+.camera-calibration-page {
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 36px 42px 48px;
+  color: #171717;
+}
+
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.calibration-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.calibration-header h1 {
+  margin: 6px 0 7px;
+  font-size: 30px;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+}
+
+.calibration-header p {
+  margin: 0;
+  max-width: 650px;
+  color: #777;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: #999;
+}
+
+.calibration-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.normal {
+  background: #36a269;
+}
+
+.status-dot.review {
+  background: #ffad1f;
+}
+
+
+/* ============================================================
+   MAIN LAYOUT
+   ============================================================ */
+
+.calibration-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(390px, 0.65fr);
+  gap: 18px;
+  align-items: start;
+}
+
+
+/* ============================================================
+   PANELS
+   ============================================================ */
+
+.camera-panel,
+.calibration-details {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+}
+
+.camera-panel {
+  padding: 18px;
+}
+
+.calibration-details {
+  padding: 20px;
+}
+
+
+/* ============================================================
+   PANEL HEADING
+   ============================================================ */
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.panel-heading h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+}
+
+.panel-heading p {
+  margin: 0;
+  color: #929292;
+  font-size: 12px;
+}
+
+.camera-live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #777;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffad1f;
+}
+
+
+/* ============================================================
+   CAMERA PREVIEW
+   ============================================================ */
+
+.camera-preview {
+  position: relative;
+
+  /* FIX:
+     Allow enough vertical space for the complete
+     12-row × 6-column seat layout.
+  */
+  min-height: 650px;
+
+  /* FIX:
+     Do not clip the bottom rows.
+  */
+  overflow: visible;
+
+  border-radius: 8px;
+  border: 1px solid #dedede;
+  background: #f5f5f5;
+}
+
+.camera-overlay {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  right: 14px;
+  z-index: 3;
+
+  display: flex;
+  justify-content: space-between;
+
+  color: #777;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+}
+
+.camera-overlay-bottom {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+
+  text-align: center;
+  z-index: 3;
+
+  color: #888;
+  font-size: 10px;
+}
+
+
+/* ============================================================
+   MOCK CAMERA HALL
+   ============================================================ */
+
+.mock-camera-hall {
+  /* FIX:
+     Changed from absolute positioning to relative positioning.
+     This lets the container grow naturally with all 72 seats.
+  */
+  position: relative;
+
+  margin: 38px 24px 34px;
+
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+
+  padding: 28px 20px 20px;
+}
+
+.mock-camera-desk {
+  width: 46%;
+  margin: 0 auto 24px;
+  padding: 8px;
+
+  border: 1px dashed #cfcfcf;
+  border-radius: 6px;
+
+  text-align: center;
+
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #999;
+}
+
+.mock-camera-seats {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+
+  /* Slightly smaller gap so all rows fit more cleanly */
+  gap: 6px;
+
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+.camera-seat {
+  position: relative;
+
+  /* Slightly reduced from 42px */
+  min-height: 38px;
+
+  border: 1px solid #dedede;
+  border-radius: 6px;
+
+  background: #fafafa;
+  color: #777;
+
+  font-size: 9px;
+  cursor: pointer;
+
+  transition: 0.15s ease;
+}
+
+.camera-seat:hover {
+  border-color: #bdbdbd;
+  transform: translateY(-1px);
+}
+
+.camera-seat span {
+  position: absolute;
+  top: 6px;
+  left: 7px;
+
+  width: 5px;
+  height: 5px;
+
+  border-radius: 50%;
+  background: #bdbdbd;
+}
+
+.camera-seat.mapped {
+  border-color: #c9e2d4;
+  background: #f5faf7;
+  color: #4f755f;
+}
+
+.camera-seat.mapped span {
+  background: #36a269;
+}
+
+.camera-seat.unmapped {
+  background: #fafafa;
+}
+
+.camera-seat.unmapped span {
+  background: #c5c5c5;
+}
+
+
+/* ============================================================
+   CAMERA LEGEND
+   ============================================================ */
+
+.camera-legend {
+  display: flex;
+  gap: 18px;
+  margin-top: 12px;
+
+  color: #777;
+  font-size: 11px;
+}
+
+.camera-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.camera-legend i {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.camera-legend i.mapped {
+  background: #36a269;
+}
+
+.camera-legend i.unmapped {
+  background: #bdbdbd;
+}
+
+
+/* ============================================================
+   DETAILS
+   ============================================================ */
+
+.detail-section {
+  margin-bottom: 18px;
+}
+
+.detail-label {
+  display: block;
+  margin-bottom: 7px;
+
+  color: #929292;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+}
+
+.detail-section select {
+  width: 100%;
+  height: 38px;
+
+  padding: 0 11px;
+
+  border: 1px solid #dedede;
+  border-radius: 7px;
+
+  background: #fff;
+  color: #333;
+
+  font-size: 12px;
+  outline: none;
+}
+
+.detail-section select:focus {
+  border-color: #ffad1f;
+}
+
+
+/* ============================================================
+   INFO ROW
+   ============================================================ */
+
+.info-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  gap: 12px;
+
+  padding: 14px 0;
+
+  border-top: 1px solid #ededed;
+  border-bottom: 1px solid #ededed;
+}
+
+.info-row div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.info-row span {
+  color: #929292;
+  font-size: 10px;
+}
+
+.info-row strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ready-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  color: #2f9e64;
+}
+
+
+/* ============================================================
+   COVERAGE
+   ============================================================ */
+
+.coverage-section {
+  padding: 18px 0;
+}
+
+.coverage-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.coverage-heading div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.coverage-heading strong {
+  font-size: 18px;
+}
+
+.coverage-heading > strong {
+  font-size: 22px;
+}
+
+.coverage-bar {
+  height: 7px;
+  margin-top: 11px;
+
+  overflow: hidden;
+
+  border-radius: 20px;
+  background: #ededed;
+}
+
+.coverage-bar div {
+  height: 100%;
+
+  border-radius: inherit;
+  background: #36a269;
+
+  transition: width 0.2s ease;
+}
+
+.coverage-section p {
+  margin: 8px 0 0;
+
+  color: #929292;
+  font-size: 10px;
+}
+
+
+/* ============================================================
+   CALIBRATION CARD
+   ============================================================ */
+
+.calibration-card {
+  padding: 15px;
+
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+
+  background: #fafafa;
+}
+
+.calibration-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 14px;
+}
+
+.calibration-card-header .detail-label {
+  margin: 0;
+}
+
+.calibration-badge {
+  padding: 5px 8px;
+
+  border-radius: 5px;
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.calibration-badge.ready {
+  background: #eef8f2;
+  color: #2f9e64;
+}
+
+.calibration-badge.in_progress {
+  background: #fff7e8;
+  color: #a66b00;
+}
+
+.calibration-badge.not_configured {
+  background: #f2f2f2;
+  color: #777;
+}
+
+.calibration-info {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr 0.8fr;
+
+  gap: 10px;
+}
+
+.calibration-info div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.calibration-info span {
+  color: #929292;
+  font-size: 9px;
+}
+
+.calibration-info strong {
+  font-size: 11px;
+}
+
+
+/* ============================================================
+   ACTIONS
+   ============================================================ */
+
+.calibration-actions {
+  display: flex;
+  gap: 8px;
+
+  margin-top: 16px;
+}
+
+.calibration-actions button {
+  height: 38px;
+
+  border-radius: 7px;
+
+  padding: 0 14px;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.save-calibration {
+  flex: 1;
+
+  border: 1px solid #171717;
+  background: #171717;
+  color: #fff;
+}
+
+.save-calibration:hover {
+  background: #2c2c2c;
+}
+
+.save-calibration:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.reset-calibration {
+  border: 1px solid #dedede;
+  background: #fff;
+  color: #555;
+}
+
+.reset-calibration:hover {
+  background: #f7f7f7;
+}
+
+
+/* ============================================================
+   FEEDBACK
+   ============================================================ */
+
+.calibration-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  margin-top: 11px;
+  padding: 9px 10px;
+
+  border-radius: 7px;
+
+  background: #f7f7f7;
+  color: #555;
+
+  font-size: 10px;
+}
+
+
+/* ============================================================
+   PRIVACY / CONTRACT NOTE
+   ============================================================ */
+
+.calibration-note {
+  display: flex;
+  align-items: flex-start;
+
+  gap: 7px;
+
+  margin-top: 14px;
+  padding-top: 13px;
+
+  border-top: 1px solid #ededed;
+
+  color: #929292;
+
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.calibration-note .privacy-dot {
+  width: 6px;
+  height: 6px;
+
+  margin-top: 4px;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+  background: #36a269;
+}
+
+
+/* ============================================================
+   SUCCESS
+   ============================================================ */
+
+.calibration-success {
+  display: flex;
+  align-items: center;
+
+  gap: 11px;
+
+  margin-top: 16px;
+  padding: 13px 15px;
+
+  border: 1px solid #dcebe2;
+  border-radius: 8px;
+
+  background: #f6fbf8;
+}
+
+.success-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 25px;
+  height: 25px;
+
+  border-radius: 50%;
+
+  background: #36a269;
+  color: #fff;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.calibration-success strong {
+  display: block;
+
+  margin-bottom: 3px;
+
+  font-size: 11px;
+}
+
+.calibration-success p {
+  margin: 0;
+
+  color: #777;
+  font-size: 10px;
+}
+
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 1050px) {
+
+  .calibration-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .camera-preview {
+    min-height: 650px;
+  }
+
+}
+
+
+@media (max-width: 700px) {
+
+  .camera-calibration-page {
+    padding: 25px 18px 35px;
+  }
+
+  .calibration-header {
+    flex-direction: column;
+  }
+
+  .mock-camera-seats {
+    gap: 5px;
+  }
+
+  .camera-seat {
+    min-height: 34px;
+    font-size: 7px;
+  }
+
+  .info-row,
+  .calibration-info {
+    grid-template-columns: 1fr;
+  }
+
+}
+/* ============================================================
+   HALL CONFIGURATION
+   ============================================================ */
+
+.hall-config-card {
+  margin-bottom: 18px;
+  padding: 15px;
+
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+
+  background: #fafafa;
+}
+
+.hall-config-header {
+  margin-bottom: 14px;
+}
+
+.hall-config-header h3 {
+  margin: 4px 0 4px;
+
+  font-size: 15px;
+}
+
+.hall-config-header p {
+  margin: 0;
+
+  color: #929292;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+
+/* ============================================================
+   CONFIGURATION INPUTS
+   ============================================================ */
+
+.hall-config-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.hall-config-inputs div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hall-config-inputs label {
+  color: #777;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.hall-config-inputs input {
+  width: 100%;
+  height: 36px;
+
+  box-sizing: border-box;
+
+  padding: 0 10px;
+
+  border: 1px solid #dedede;
+  border-radius: 7px;
+
+  background: #fff;
+  color: #333;
+
+  font-size: 12px;
+  outline: none;
+}
+
+.hall-config-inputs input:focus {
+  border-color: #ffad1f;
+}
+
+
+/* ============================================================
+   CONFIGURATION SUMMARY
+   ============================================================ */
+
+.hall-config-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  margin-top: 12px;
+
+  border-top: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.hall-config-summary div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  padding: 10px;
+
+  text-align: center;
+}
+
+.hall-config-summary div + div {
+  border-left: 1px solid #e8e8e8;
+}
+
+.hall-config-summary span {
+  color: #929292;
+  font-size: 9px;
+}
+
+.hall-config-summary strong {
+  color: #171717;
+  font-size: 15px;
+}
+
+
+/* ============================================================
+   GENERATE BUTTON
+   ============================================================ */
+
+.generate-layout-btn {
+  width: 100%;
+  height: 36px;
+
+  margin-top: 12px;
+
+  border: 1px solid #dedede;
+  border-radius: 7px;
+
+  background: #fff;
+  color: #333;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.15s ease;
+}
+
+.generate-layout-btn:hover {
+  border-color: #ffad1f;
+  background: #fffaf0;
+}
+
+
+/* ============================================================
+   DYNAMIC GRID SUPPORT
+   ============================================================ */
+
+.mock-camera-seats {
+  width: 100%;
+}
+
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 700px) {
+
+  .hall-config-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .hall-config-summary {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+}
