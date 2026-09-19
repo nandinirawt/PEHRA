@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "./LiveMonitor.css";
 const API_BASE_URL = "http://localhost:8000";
-const EXAM_ID = "EXAM-101";
+const EXAM_ID = "EXAM-01";
 /*
  * ============================================================
  * PEHRA - VERSION 1 MOCK DATA
@@ -898,7 +898,23 @@ const getSeatStatus = (
     backendStates
   );
 
-  return getUiStatus(riskState.status);
+  const score = Number(riskState.risk_score || 0);
+
+  // Keep absent seats grey
+  if (riskState.status === "absent") {
+    return "absent";
+  }
+
+  // Risk thresholds for seat colors
+  if (score > 40) {
+    return "high";      // Red
+  }
+
+  if (score > 20) {
+    return "review";    // Orange
+  }
+
+  return "normal";      // Green
 };
 
 
@@ -914,6 +930,7 @@ const getSeatEvents = (seatId) => {
    ============================================================ */
 
 function LiveMonitor() {
+
 
   const [hallConfig, setHallConfig] = useState(() => {
 
@@ -1158,6 +1175,109 @@ useEffect(() => {
 
 
   loadBackendRiskStates();
+
+}, []);
+/* ==========================================================
+   REAL-TIME RISK WEBSOCKET
+   ========================================================== */
+
+useEffect(() => {
+
+  const ws = new WebSocket(
+    `ws://127.0.0.1:8000/ws/exams/${EXAM_ID}`
+  );
+
+  ws.onopen = () => {
+    console.log(
+      "PEHRA Risk WebSocket connected"
+    );
+  };
+
+  ws.onmessage = (event) => {
+
+    try {
+
+      const message = JSON.parse(
+        event.data
+      );
+
+      if (
+        message.type !== "RISK_STATE_UPDATE" ||
+        !message.seat_id ||
+        !message.data
+      ) {
+        return;
+      }
+
+      const incomingRisk = {
+        ...message.data,
+        seat_id: message.seat_id,
+      };
+
+      console.log(
+        "PEHRA real-time risk update:",
+        incomingRisk
+      );
+
+      setBackendRiskStates((previous) => {
+
+        const existingIndex =
+          previous.findIndex(
+            (item) =>
+              item.seat_id ===
+              incomingRisk.seat_id
+          );
+
+        if (existingIndex === -1) {
+          return [
+            ...previous,
+            incomingRisk,
+          ];
+        }
+
+        const updated = [
+          ...previous,
+        ];
+
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          ...incomingRisk,
+        };
+
+        return updated;
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Invalid risk WebSocket message:",
+        error
+      );
+
+    }
+  };
+
+  ws.onerror = (error) => {
+
+    console.error(
+      "PEHRA Risk WebSocket error:",
+      error
+    );
+
+  };
+
+  ws.onclose = () => {
+
+    console.log(
+      "PEHRA Risk WebSocket disconnected"
+    );
+
+  };
+
+  return () => {
+    ws.close();
+  };
 
 }, []);
   /* ==========================================================
@@ -1825,6 +1945,83 @@ const selectedRiskState = getRiskState(
               ></div>
 
             </div>
+            {/* =================================================
+    DETECTED ACTIVITY
+    ================================================= */}
+
+<div className="detected-activity-card">
+
+  <span className="detail-label">
+    DETECTED ACTIVITY
+  </span>
+
+  <div className="detected-activity-row">
+
+    <strong>
+      {(selectedRiskState.activity || "normal")
+        .replaceAll("_", " ")}
+    </strong>
+
+    {selectedRiskState.benign && (
+      <span className="benign-badge">
+        ✓ Benign
+      </span>
+    )}
+
+  </div>
+
+</div>
+            <div className="detected-activity">
+  <span className="detail-label">
+    DETECTED ACTIVITY
+  </span>
+
+  <div>
+    <strong>
+      {selectedRiskState.activity || "Normal"}
+    </strong>
+
+    {selectedRiskState.benign && (
+      <span style={{ marginLeft: "10px" }}>
+        ✓ Benign
+      </span>
+    )}
+  </div>
+</div>
+            <div className="detected-activity">
+  <span className="detail-label">
+    DETECTED ACTIVITY
+  </span>
+
+  <div>
+    <strong>
+      {selectedRiskState.activity || "Normal"}
+    </strong>
+
+    {selectedRiskState.benign && (
+      <span style={{ marginLeft: "10px" }}>
+        ✓ Benign
+      </span>
+    )}
+  </div>
+</div>
+            <div className="detected-activity">
+  <span className="detail-label">
+    DETECTED ACTIVITY
+  </span>
+
+  <div>
+    <strong>
+      {selectedRiskState.activity || "Normal"}
+    </strong>
+
+    {selectedRiskState.benign && (
+      <span style={{ marginLeft: "10px" }}>
+        ✓ Benign
+      </span>
+    )}
+  </div>
+</div>
 
 
             {/* =================================================

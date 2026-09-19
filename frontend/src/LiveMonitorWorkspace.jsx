@@ -1,5 +1,4 @@
-import { useState } from "react";
-import LiveMonitor from "./LiveMonitor";
+import { useEffect, useState } from "react";import LiveMonitor from "./LiveMonitor";
 import CameraCalibration from "./CameraCalibration";
 import PrivacyCenter from "./PrivacyCenter";
 import "./LiveMonitorWorkspace.css";
@@ -43,8 +42,9 @@ function LiveMonitorWorkspace() {
   // =========================================================
 
   const goToSection = (nextSection) => {
-    setSection(nextSection);
-  };
+  
+  setSection(nextSection);
+};
 
 
   // =========================================================
