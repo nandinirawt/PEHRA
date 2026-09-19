@@ -1,0 +1,77 @@
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  width: fit-content;
+
+  padding: 5px 9px;
+
+  border-radius: 999px;
+
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+
+  white-space: nowrap;
+}
+
+
+/* STATUS DOT */
+
+.status-pill-dot {
+  width: 6px;
+  height: 6px;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+}
+
+
+/* LIVE */
+
+.status-pill.live {
+  background: #eaf7ef;
+  color: #267a4d;
+}
+
+.status-pill.live .status-pill-dot {
+  background: #36a269;
+}
+
+
+/* UPCOMING */
+
+.status-pill.upcoming {
+  background: #fff5df;
+  color: #9a6500;
+}
+
+.status-pill.upcoming .status-pill-dot {
+  background: #ffad1f;
+}
+
+
+/* COMPLETED */
+
+.status-pill.completed {
+  background: #f1f1f1;
+  color: #666666;
+}
+
+.status-pill.completed .status-pill-dot {
+  background: #929292;
+}
+
+
+/* NORMAL */
+
+.status-pill.normal {
+  background: #f1f1f1;
+  color: #666666;
+}
+
+.status-pill.normal .status-pill-dot {
+  background: #929292;
+}

@@ -1,0 +1,75 @@
+.seat-chip {
+  width: 34px;
+  height: 28px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  box-sizing: border-box;
+
+  border-radius: 6px;
+  border: 1px solid #e2e2e2;
+
+  background: #ffffff;
+  color: #555555;
+
+  font-size: 10px;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+
+/* NORMAL */
+
+.seat-chip.normal {
+  background: #f7f7f7;
+  border-color: #e2e2e2;
+  color: #555555;
+}
+
+
+/* ACTIVE */
+
+.seat-chip.active {
+  background: #eaf7ef;
+  border-color: #b9dec9;
+  color: #267a4d;
+}
+
+
+/* FLAGGED */
+
+.seat-chip.flagged {
+  background: #fff5df;
+  border-color: #f0d18a;
+  color: #9a6500;
+}
+
+
+/* HIGH RISK */
+
+.seat-chip.high {
+  background: #fdecec;
+  border-color: #efbaba;
+  color: #b63c3c;
+}
+
+
+/* ABSENT */
+
+.seat-chip.absent {
+  background: #f1f1f1;
+  border-color: #dddddd;
+  color: #999999;
+}
+
+
+/* UNKNOWN */
+
+.seat-chip.unknown {
+  background: #f1f1f1;
+  border-color: #dddddd;
+  color: #777777;
+}

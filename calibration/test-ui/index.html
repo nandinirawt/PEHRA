@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>PEHRA Calibration Test</title>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <main class="page">
+
+    <header class="header">
+      <div>
+        <div class="eyebrow">PEHRA</div>
+        <h1>Camera Calibration Test</h1>
+        <p>
+          Detect seats, then click a physical seat to inspect its mapping.
+        </p>
+      </div>
+
+      <div id="apiStatus" class="status checking">
+        Checking API...
+      </div>
+    </header>
+
+
+    <section class="controls card">
+
+      <div>
+        <label for="rows">Rows</label>
+        <input id="rows" type="number" value="4" min="1" />
+      </div>
+
+      <div>
+        <label for="columns">Columns</label>
+        <input id="columns" type="number" value="4" min="1" />
+      </div>
+
+      <button id="detectButton" class="primary">
+        Detect Seats
+      </button>
+
+    </section>
+
+
+    <section class="workspace">
+
+      <div class="card camera-card">
+
+        <div class="card-header">
+          <div>
+            <h2>Camera View</h2>
+            <p>
+              Click directly on a detected physical seat.
+            </p>
+          </div>
+
+          <span id="detectionCount">
+            0 seats
+          </span>
+        </div>
+
+        <div id="cameraWrapper" class="camera-wrapper">
+
+          <img
+            id="classroomImage"
+            src="../data/classroom.jpg"
+            alt="Classroom"
+          />
+
+          <div
+            id="seatOverlay"
+            class="seat-overlay"
+          ></div>
+
+          <div
+            id="clickMarker"
+            class="click-marker hidden"
+          ></div>
+
+        </div>
+
+      </div>
+      <section class="card seat-map-card">
+
+  <div class="card-header">
+    <div>
+      <h2>Seat Structure</h2>
+      <p>
+        Click a physical seat in the camera to calibrate its logical position.
+      </p>
+    </div>
+
+    <span id="calibrationCount">
+      0 / 0 calibrated
+    </span>
+  </div>
+
+  <div id="seatGrid" class="seat-grid"></div>
+
+</section>
+
+
+      <aside class="card result-card">
+
+        <div class="card-header">
+          <div>
+            <h2>Selected Seat</h2>
+            <p>
+              Result from the calibration backend.
+            </p>
+          </div>
+        </div>
+
+        <div
+          id="emptyResult"
+          class="empty-result"
+        >
+          Click a detected seat in the camera view.
+        </div>
+
+        <div
+          id="seatResult"
+          class="seat-result hidden"
+        >
+
+          <div class="big-label" id="seatLabel">
+            R1-C1
+          </div>
+
+          <div class="result-grid">
+
+            <div>
+              <span>Row</span>
+              <strong id="seatRow">1</strong>
+            </div>
+
+            <div>
+              <span>Column</span>
+              <strong id="seatColumn">1</strong>
+            </div>
+
+            <div>
+              <span>Confidence</span>
+              <strong id="seatConfidence">0</strong>
+            </div>
+
+            <div>
+              <span>Distance</span>
+              <strong id="seatDistance">0 px</strong>
+            </div>
+
+          </div>
+
+          <div class="coordinates">
+            <span>Detected center</span>
+
+            <strong id="seatCoordinates">
+              (0, 0)
+            </strong>
+          </div>
+
+        </div>
+
+      </aside>
+
+    </section>
+
+
+    <section class="card validation-card">
+
+      <div class="card-header">
+        <div>
+          <h2>Calibration Status</h2>
+          <p>
+            Compare the detected seating structure with the configured layout.
+          </p>
+        </div>
+      </div>
+
+      <div class="validation-row">
+
+        <div>
+          <span>Expected</span>
+          <strong id="expectedLayout">
+            4 × 4
+          </strong>
+        </div>
+
+        <div>
+          <span>Detected</span>
+          <strong id="detectedLayout">
+            —
+          </strong>
+        </div>
+
+        <div>
+          <span>Status</span>
+          <strong id="validationStatus">
+            Not checked
+          </strong>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+
+</body>
+</html>
