@@ -1,8 +1,9 @@
 import sys
 import time
+import traceback
 from datetime import datetime
 from pathlib import Path
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -36,39 +37,44 @@ def parse_to_epoch(ts_val) -> float:
 
 @router.post("")
 async def ingest_pose(data: PoseDataSchema, db: Session = Depends(get_db)):
-    # 1. Database record save
-    record = PoseRecord(
-        seat_id=data.seat_id,
-        timestamp=data.timestamp,
-        presence=data.presence,
-        confidence=data.confidence,
-        pose_features=data.pose_features
-    )
-    db.add(record)
-    db.commit()
+    try:
+        record = PoseRecord(
+            seat_id=data.seat_id,
+            timestamp=datetime.fromtimestamp(parse_to_epoch(data.timestamp)),
+            presence=data.presence,
+            confidence=data.confidence,
+            pose_features=str(data.pose_features) if isinstance(data.pose_features, dict) else data.pose_features
+        )
+        db.add(record)
+        db.commit()
+    except Exception as db_err:
+        db.rollback()
 
-    # 2. Risk engine ingestion
-    numeric_ts = parse_to_epoch(data.timestamp)
-    pose_payload = {
-        "seat_id": data.seat_id,
-        "timestamp": numeric_ts,
-        "presence": data.presence,
-        "confidence": data.confidence,
-        "pose_features": data.pose_features or {}
-    }
+    try:
+        numeric_ts = parse_to_epoch(data.timestamp)
+        pose_payload = {
+            "seat_id": data.seat_id,
+            "timestamp": numeric_ts,
+            "presence": data.presence,
+            "confidence": data.confidence,
+            "pose_features": data.pose_features or {}
+        }
 
-    exam_id = "EXAM-01"
-    risk_result = risk_engine.process_pose_frame(pose_payload, exam_id=exam_id)
+        exam_id = "EXAM-101"
+        risk_result = risk_engine.process_pose_frame(pose_payload, exam_id=exam_id)
+        risk_result["exam_id"] = exam_id
 
-    # 3. Broadcast directly to P3's WebSocket channel
-    ws_payload = {
-        "type": "RISK_UPDATE",
-        "data": risk_result
-    }
-    await ws_manager.broadcast(exam_id, ws_payload)
+        # Broadcast directly to EXAM-101
+        await ws_manager.broadcast(exam_id, {
+            "type": "RISK_UPDATE",
+            "data": risk_result
+        })
 
-    return {
-        "status": "ok",
-        "seat_id": data.seat_id,
-        "risk": risk_result
-    }
+        return {
+            "status": "ok",
+            "seat_id": data.seat_id,
+            "risk": risk_result
+        }
+    except Exception as eng_err:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(eng_err))

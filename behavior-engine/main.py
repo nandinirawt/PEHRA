@@ -1,4 +1,4 @@
-﻿import time
+import time
 from typing import Dict, Any
 from features.extractor import FeatureExtractor
 from temporal.window import TemporalWindowTracker
@@ -35,7 +35,11 @@ class BehaviorEnginePipeline:
         return risk_result
 
     def tick_decay_all(self, active_seats: list, current_time: float, exam_id: str = "EXAM-01"):
+        updates = []
         for seat_id in active_seats:
             persistent = self.tracker.get_persistent_signals(seat_id, current_time)
             risk_result = self.fusion.compute_risk(seat_id, persistent, current_time)
             self.publisher.publish_risk_state(exam_id, risk_result)
+            updates.append(risk_result)
+        return updates
+
