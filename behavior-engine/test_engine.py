@@ -47,8 +47,8 @@ for i in range(3):
 assert res3["status"] == "high_risk", "Failed: Status did not escalate to high_risk"
 print(f"[PASS] Test 3: Multi-signal escalation -> Score: {res3['risk_score']}")
 
-# Test 4: Risk decay (forward time by 40s past window cutoff)
-decay_time = t_escalate + 40.0
+# Test 4: Risk decay (jump 65s forward: 45s grace period + 20s active decay)
+decay_time = t_escalate + 65.0
 decayed = engine.process_pose_frame({
     "seat_id": "B-04",
     "timestamp": decay_time,
@@ -56,6 +56,6 @@ decayed = engine.process_pose_frame({
     "confidence": 0.95,
     "pose_features": {"head_direction": "center", "body_orientation": "forward"}
 })
-assert decayed["risk_score"] < res3["risk_score"], "Failed: Risk score did not decay"
+assert decayed["risk_score"] < res3["risk_score"], f"Failed: Risk score did not decay ({decayed['risk_score']} >= {res3['risk_score']})"
 print(f"[PASS] Test 4: Decay verified -> Initial: {res3['risk_score']} -> Decayed: {decayed['risk_score']}")
 print("--- ALL 4 TESTS PASSED ---\n")
