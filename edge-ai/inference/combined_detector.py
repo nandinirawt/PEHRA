@@ -19,10 +19,10 @@ BASE_DIR = os.path.dirname(
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
 
-
 from representation.anonymous_features import (
     get_body_orientation,
-    get_hand_state
+    get_hand_state,
+    detect_benign_activity
 )
 
 from client.backend_client import send_pose_data
@@ -90,11 +90,35 @@ POSE_CONNECTIONS = [
 
 
 # ============================================================
+# MEDIAPIPE HAND SKELETON CONNECTIONS
+# ============================================================
+
+HAND_CONNECTIONS = [
+    # Thumb
+    (0, 1), (1, 2), (2, 3), (3, 4),
+
+    # Index finger
+    (0, 5), (5, 6), (6, 7), (7, 8),
+
+    # Middle finger
+    (0, 9), (9, 10), (10, 11), (11, 12),
+
+    # Ring finger
+    (0, 13), (13, 14), (14, 15), (15, 16),
+
+    # Pinky
+    (0, 17), (17, 18), (18, 19), (19, 20),
+
+    # Palm connections
+    (5, 9), (9, 13), (13, 17)
+]
+
+
+# ============================================================
 # HEAD DIRECTION
 # ============================================================
 
 def get_head_direction(pose_landmarks):
-
     LEFT_EAR = 7
     RIGHT_EAR = 8
     NOSE = 0
@@ -127,7 +151,6 @@ def get_head_direction(pose_landmarks):
 # ============================================================
 
 def calculate_distance(point1, point2):
-
     return math.sqrt(
         (point1.x - point2.x) ** 2
         +
@@ -139,10 +162,7 @@ def calculate_distance(point1, point2):
 # MATCH HAND TO CLOSEST PERSON
 # ============================================================
 
-def find_closest_person(
-    hand_landmarks,
-    people_data
-):
+def find_closest_person(hand_landmarks, people_data):
 
     if not hand_landmarks or not people_data:
         return None
@@ -160,13 +180,8 @@ def find_closest_person(
         pose_landmarks = person["pose_landmarks"]
 
         try:
-            left_shoulder = pose_landmarks[
-                LEFT_SHOULDER
-            ]
-
-            right_shoulder = pose_landmarks[
-                RIGHT_SHOULDER
-            ]
+            left_shoulder = pose_landmarks[LEFT_SHOULDER]
+            right_shoulder = pose_landmarks[RIGHT_SHOULDER]
 
             shoulder_center_x = (
                 left_shoulder.x
@@ -185,12 +200,9 @@ def find_closest_person(
             )
 
             if distance < minimum_distance:
-
                 minimum_distance = distance
 
-                closest_person_index = person[
-                    "person_index"
-                ]
+                closest_person_index = person["person_index"]
 
         except IndexError:
             continue
@@ -211,18 +223,9 @@ def start_combined_detection():
         print("Error: Could not open webcam.")
         return
 
-
     # Camera resolution
-    camera.set(
-        cv2.CAP_PROP_FRAME_WIDTH,
-        640
-    )
-
-    camera.set(
-        cv2.CAP_PROP_FRAME_HEIGHT,
-        480
-    )
-
+    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
     # ========================================================
     # MEDIAPIPE CLASSES
@@ -230,570 +233,474 @@ def start_combined_detection():
 
     BaseOptions = mp.tasks.BaseOptions
 
-    PoseLandmarker = (
-        mp.tasks.vision.PoseLandmarker
-    )
+    PoseLandmarker = mp.tasks.vision.PoseLandmarker
+    PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
 
-    PoseLandmarkerOptions = (
-        mp.tasks.vision.PoseLandmarkerOptions
-    )
+    HandLandmarker = mp.tasks.vision.HandLandmarker
+    HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
 
-    HandLandmarker = (
-        mp.tasks.vision.HandLandmarker
-    )
-
-    HandLandmarkerOptions = (
-        mp.tasks.vision.HandLandmarkerOptions
-    )
-
-    RunningMode = (
-        mp.tasks.vision.RunningMode
-    )
-
+    RunningMode = mp.tasks.vision.RunningMode
 
     # ========================================================
     # POSE DETECTOR
     # ========================================================
 
     pose_options = PoseLandmarkerOptions(
-
         base_options=BaseOptions(
             model_asset_path=POSE_MODEL_PATH
         ),
-
         running_mode=RunningMode.VIDEO,
-
         num_poses=MAX_PEOPLE,
-
         min_pose_detection_confidence=0.5,
-
         min_pose_presence_confidence=0.5,
-
         min_tracking_confidence=0.5
     )
-
 
     # ========================================================
     # HAND DETECTOR
     # ========================================================
 
     hand_options = HandLandmarkerOptions(
-
         base_options=BaseOptions(
             model_asset_path=HAND_MODEL_PATH
         ),
-
         running_mode=RunningMode.VIDEO,
-
         num_hands=MAX_PEOPLE * 2,
-
         min_hand_detection_confidence=0.5,
-
         min_hand_presence_confidence=0.5,
-
         min_tracking_confidence=0.5
     )
-
 
     # ========================================================
     # SEPARATE STATE FOR EACH PERSON
     # ========================================================
 
     orientation_histories = {}
-
     previous_person_hands = {}
-
     unusual_frames_remaining = {}
 
-
     last_send_time = time.time()
-
 
     print("\nLive camera detection started.")
     print(f"Detecting up to {MAX_PEOPLE} people.")
     print("Press Q to stop.\n")
 
-
     # ========================================================
     # START DETECTORS
     # ========================================================
 
-    with PoseLandmarker.create_from_options(
-        pose_options
-    ) as pose_detector, HandLandmarker.create_from_options(
-        hand_options
-    ) as hand_detector:
+    try:
+        with PoseLandmarker.create_from_options(
+            pose_options
+        ) as pose_detector, HandLandmarker.create_from_options(
+            hand_options
+        ) as hand_detector:
 
-        start_time = time.time()
+            start_time = time.time()
 
+            while True:
 
-        while True:
+                # =================================================
+                # READ LIVE CAMERA
+                # =================================================
 
-            # =================================================
-            # READ LIVE CAMERA
-            # =================================================
+                success, frame = camera.read()
 
-            success, frame = camera.read()
+                if not success:
+                    print("Error: Could not read frame.")
+                    break
 
-            if not success:
-                print("Error: Could not read frame.")
-                break
+                # Mirror webcam
+                frame = cv2.flip(frame, 1)
 
+                # =================================================
+                # CONVERT BGR TO RGB
+                # =================================================
 
-            # Mirror webcam
-            frame = cv2.flip(
-                frame,
-                1
-            )
+                rgb_frame = cv2.cvtColor(
+                    frame,
+                    cv2.COLOR_BGR2RGB
+                )
 
+                mp_image = mp.Image(
+                    image_format=mp.ImageFormat.SRGB,
+                    data=rgb_frame
+                )
 
-            # =================================================
-            # CONVERT BGR TO RGB
-            # =================================================
+                # Increasing timestamp required for VIDEO mode
+                timestamp_ms = int(
+                    (time.time() - start_time) * 1000
+                )
 
-            rgb_frame = cv2.cvtColor(
-                frame,
-                cv2.COLOR_BGR2RGB
-            )
+                # =================================================
+                # DETECT POSES
+                # =================================================
 
-
-            mp_image = mp.Image(
-
-                image_format=mp.ImageFormat.SRGB,
-
-                data=rgb_frame
-            )
-
-
-            # Increasing timestamp required for VIDEO mode
-            timestamp_ms = int(
-                (time.time() - start_time) * 1000
-            )
-
-
-            # =================================================
-            # DETECT POSES
-            # =================================================
-
-            pose_result = (
-                pose_detector.detect_for_video(
+                pose_result = pose_detector.detect_for_video(
                     mp_image,
                     timestamp_ms
                 )
-            )
 
+                # =================================================
+                # DETECT HANDS
+                # =================================================
 
-            # =================================================
-            # DETECT HANDS
-            # =================================================
-
-            hand_result = (
-                hand_detector.detect_for_video(
+                hand_result = hand_detector.detect_for_video(
                     mp_image,
                     timestamp_ms
                 )
-            )
 
+                # =================================================
+                # CREATE DATA FOR DETECTED PEOPLE
+                # =================================================
 
-            # =================================================
-            # CREATE DATA FOR DETECTED PEOPLE
-            # =================================================
+                people_data = []
 
-            people_data = []
+                if pose_result.pose_landmarks:
 
-
-            if pose_result.pose_landmarks:
-
-                for person_index, pose_landmarks in enumerate(
-                    pose_result.pose_landmarks
-                ):
-
-                    # Persistent orientation history
-                    if (
-                        person_index
-                        not in orientation_histories
+                    for person_index, pose_landmarks in enumerate(
+                        pose_result.pose_landmarks
                     ):
-                        orientation_histories[
-                            person_index
-                        ] = []
 
+                        # Extract shoulder horizontal position to calculate center_x
+                        LEFT_SHOULDER = 11
+                        RIGHT_SHOULDER = 12
+                        
+                        try:
+                            left_shoulder_x = pose_landmarks[LEFT_SHOULDER].x
+                            right_shoulder_x = pose_landmarks[RIGHT_SHOULDER].x
+                            center_x = (left_shoulder_x + right_shoulder_x) / 2.0
+                        except IndexError:
+                            # Fallback if shoulders are not in landmarks
+                            center_x = pose_landmarks[0].x
 
-                    # Head direction
-                    head_direction = get_head_direction(
-                        pose_landmarks
+                        people_data.append({
+                            "person_index": person_index,
+                            "pose_landmarks": pose_landmarks,
+                            "center_x": center_x,
+                            "head_direction": "unknown",
+                            "body_orientation": "unknown",
+                            "hand_state": "normal",
+                            "hands": []
+                        })
+
+                # =================================================
+                # SORT PEOPLE FROM LEFT TO RIGHT
+                # =================================================
+
+                # Sort by horizontal center position (smaller center_x = further left)
+                people_data.sort(key=lambda person: person["center_x"])
+
+                # Reassign person indices based on left-to-right order
+                for sorted_index, person in enumerate(people_data):
+                    person["person_index"] = sorted_index
+
+                    # Persistent orientation history linked to sorted index
+                    if sorted_index not in orientation_histories:
+                        orientation_histories[sorted_index] = []
+
+                    # Calculate head direction & body orientation using sorted index
+                    person["head_direction"] = get_head_direction(
+                        person["pose_landmarks"]
+                    )
+                    person["body_orientation"] = get_body_orientation(
+                        person["pose_landmarks"],
+                        orientation_histories[sorted_index]
                     )
 
+                # =================================================
+                # MATCH HANDS TO INDIVIDUAL PEOPLE
+                # =================================================
 
-                    # Body orientation
-                    body_orientation = get_body_orientation(
-                        pose_landmarks,
-                        orientation_histories[
-                            person_index
-                        ]
-                    )
+                if hand_result.hand_landmarks:
 
+                    for hand_landmarks in hand_result.hand_landmarks:
 
-                    people_data.append({
-
-                        "person_index":
-                            person_index,
-
-                        "pose_landmarks":
-                            pose_landmarks,
-
-                        "head_direction":
-                            head_direction,
-
-                        "body_orientation":
-                            body_orientation,
-
-                        "hand_state":
-                            "normal",
-
-                        "hands":
-                            []
-                    })
-
-
-            # =================================================
-            # MATCH HANDS TO INDIVIDUAL PEOPLE
-            # =================================================
-
-            if hand_result.hand_landmarks:
-
-                for hand_landmarks in (
-                    hand_result.hand_landmarks
-                ):
-
-                    closest_person_index = (
-                        find_closest_person(
+                        closest_person_index = find_closest_person(
                             hand_landmarks,
                             people_data
                         )
-                    )
 
-
-                    if closest_person_index is not None:
-
-                        for person in people_data:
-
-                            if (
-                                person["person_index"]
-                                ==
-                                closest_person_index
-                            ):
-
-                                person["hands"].append(
-                                    hand_landmarks
-                                )
-
-                                break
-
-
-            # =================================================
-            # CALCULATE HAND STATE FOR EACH PERSON SEPARATELY
-            # =================================================
-
-            for person in people_data:
-
-                person_index = person[
-                    "person_index"
-                ]
-
-
-                if (
-                    person_index
-                    not in previous_person_hands
-                ):
-                    previous_person_hands[
-                        person_index
-                    ] = None
-
-
-                if (
-                    person_index
-                    not in unusual_frames_remaining
-                ):
-                    unusual_frames_remaining[
-                        person_index
-                    ] = 0
-
-
-                hand_state, remaining_frames = (
-                    get_hand_state(
-
-                        person["hands"],
-
-                        previous_person_hands[
-                            person_index
-                        ],
-
-                        unusual_frames_remaining[
-                            person_index
-                        ]
-                    )
-                )
-
-
-                person["hand_state"] = hand_state
-
-
-                unusual_frames_remaining[
-                    person_index
-                ] = remaining_frames
-
-
-                previous_person_hands[
-                    person_index
-                ] = person["hands"]
-
-
-            # =================================================
-            # DRAW RESULTS
-            # =================================================
-
-            height, width, _ = frame.shape
-
-
-            # =================================================
-            # DRAW CONNECTED POSE SKELETON
-            # =================================================
-
-            if pose_result.pose_landmarks:
-
-                for pose_landmarks in (
-                    pose_result.pose_landmarks
-                ):
-
-                    # Draw skeleton lines first
-                    for start_index, end_index in (
-                        POSE_CONNECTIONS
-                    ):
-
-                        start_landmark = pose_landmarks[
-                            start_index
-                        ]
-
-                        end_landmark = pose_landmarks[
-                            end_index
-                        ]
-
-
-                        start_x = int(
-                            start_landmark.x * width
-                        )
-
-                        start_y = int(
-                            start_landmark.y * height
-                        )
-
-                        end_x = int(
-                            end_landmark.x * width
-                        )
-
-                        end_y = int(
-                            end_landmark.y * height
-                        )
-
-
-                        cv2.line(
-                            frame,
-                            (start_x, start_y),
-                            (end_x, end_y),
-                            (0, 255, 0),
-                            2
-                        )
-
-
-                    # Draw dots over skeleton lines
-                    for landmark in pose_landmarks:
-
-                        x = int(
-                            landmark.x * width
-                        )
-
-                        y = int(
-                            landmark.y * height
-                        )
-
-
-                        cv2.circle(
-                            frame,
-                            (x, y),
-                            4,
-                            (0, 255, 0),
-                            -1
-                        )
-
-
-            # =================================================
-            # DRAW HAND LANDMARKS
-            # =================================================
-
-            if hand_result.hand_landmarks:
-
-                for hand_landmarks in (
-                    hand_result.hand_landmarks
-                ):
-
-                    for landmark in hand_landmarks:
-
-                        x = int(
-                            landmark.x * width
-                        )
-
-                        y = int(
-                            landmark.y * height
-                        )
-
-
-                        cv2.circle(
-                            frame,
-                            (x, y),
-                            3,
-                            (255, 0, 0),
-                            -1
-                        )
-
-
-            # =================================================
-            # DISPLAY FEATURES FOR EACH PERSON
-            # =================================================
-
-            for person in people_data:
-
-                person_index = person[
-                    "person_index"
-                ]
-
-
-                y_position = (
-                    40
-                    + person_index * 100
-                )
-
-
-                cv2.putText(
-                    frame,
-                    f"Person {person_index + 1}",
-                    (20, y_position),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.7,
-                    (255, 255, 255),
-                    2
-                )
-
-
-                cv2.putText(
-                    frame,
-                    f"Head: {person['head_direction']}",
-                    (20, y_position + 25),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (0, 255, 0),
-                    2
-                )
-
-
-                cv2.putText(
-                    frame,
-                    f"Body: {person['body_orientation']}",
-                    (20, y_position + 50),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (0, 255, 0),
-                    2
-                )
-
-
-                cv2.putText(
-                    frame,
-                    f"Hands: {person['hand_state']}",
-                    (20, y_position + 75),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (0, 255, 0),
-                    2
-                )
-
-
-            # =================================================
-            # SEND DATA TO BACKEND
-            # =================================================
-
-            current_time = time.time()
-
-
-            if (
-                current_time - last_send_time
-                >= SEND_INTERVAL
-            ):
+                        if closest_person_index is not None:
+
+                            for person in people_data:
+
+                                if (
+                                    person["person_index"]
+                                    == closest_person_index
+                                ):
+                                    person["hands"].append(
+                                        hand_landmarks
+                                    )
+                                    break
+
+                # =================================================
+                # CALCULATE HAND STATE FOR EACH PERSON SEPARATELY
+                # =================================================
 
                 for person in people_data:
 
-                    pose_data = {
+                    person_index = person["person_index"]
 
-                        "seat_id":
-                            f"PERSON-{person['person_index'] + 1}",
+                    if person_index not in previous_person_hands:
+                        previous_person_hands[person_index] = None
 
-                        "timestamp":
-                            time.strftime(
-                                "%Y-%m-%dT%H:%M:%SZ",
-                                time.gmtime()
-                            ),
+                    if person_index not in unusual_frames_remaining:
+                        unusual_frames_remaining[person_index] = 0
 
-                        "presence":
-                            True,
-
-                        "confidence":
-                            0.95,
-
-                        "pose_features": {
-
-                            "head_direction":
-                                person["head_direction"],
-
-                            "body_orientation":
-                                person["body_orientation"],
-
-                            "hand_state":
-                                person["hand_state"]
-                        }
-                    }
-
-
-                    send_pose_data(
-                        pose_data
+                    hand_state, remaining_frames = get_hand_state(
+                        person["hands"],
+                        previous_person_hands[person_index],
+                        unusual_frames_remaining[person_index]
                     )
 
+                    person["hand_state"] = hand_state
 
-                last_send_time = current_time
+                    unusual_frames_remaining[person_index] = (
+                        remaining_frames
+                    )
 
+                    previous_person_hands[person_index] = person["hands"]
 
-            # =================================================
-            # SHOW LIVE CAMERA
-            # =================================================
+                # =================================================
+                # DRAW RESULTS
+                # =================================================
 
-            cv2.imshow(
-                "PEHRA Edge AI - Multi Person Detection",
-                frame
-            )
+                height, width, _ = frame.shape
 
+                # =================================================
+                # DRAW CONNECTED POSE SKELETON
+                # =================================================
 
-            # Press Q to close
-            if (
-                cv2.waitKey(1) & 0xFF
-                == ord("q")
-            ):
-                break
+                if pose_result.pose_landmarks:
 
+                    for pose_landmarks in pose_result.pose_landmarks:
 
-    # ========================================================
-    # CLEANUP
-    # ========================================================
+                        # Draw skeleton lines first
+                        for start_index, end_index in POSE_CONNECTIONS:
 
-    camera.release()
-    cv2.destroyAllWindows()
+                            try:
+                                start_landmark = pose_landmarks[start_index]
+                                end_landmark = pose_landmarks[end_index]
+                            except IndexError:
+                                continue
+
+                            start_x = int(
+                                start_landmark.x * width
+                            )
+                            start_y = int(
+                                start_landmark.y * height
+                            )
+
+                            end_x = int(
+                                end_landmark.x * width
+                            )
+                            end_y = int(
+                                end_landmark.y * height
+                            )
+
+                            cv2.line(
+                                frame,
+                                (start_x, start_y),
+                                (end_x, end_y),
+                                (0, 255, 0),
+                                2
+                            )
+
+                        # Draw dots over skeleton lines
+                        for landmark in pose_landmarks:
+
+                            x = int(landmark.x * width)
+                            y = int(landmark.y * height)
+
+                            cv2.circle(
+                                frame,
+                                (x, y),
+                                4,
+                                (0, 255, 0),
+                                -1
+                            )
+
+                # =================================================
+                # DRAW CONNECTED HAND LANDMARKS
+                # =================================================
+
+                if hand_result.hand_landmarks:
+
+                    for hand_landmarks in hand_result.hand_landmarks:
+
+                        # Draw connecting lines first
+                        for start_index, end_index in HAND_CONNECTIONS:
+
+                            start_landmark = hand_landmarks[start_index]
+                            end_landmark = hand_landmarks[end_index]
+
+                            start_x = int(
+                                start_landmark.x * width
+                            )
+                            start_y = int(
+                                start_landmark.y * height
+                            )
+
+                            end_x = int(
+                                end_landmark.x * width
+                            )
+                            end_y = int(
+                                end_landmark.y * height
+                            )
+
+                            cv2.line(
+                                frame,
+                                (start_x, start_y),
+                                (end_x, end_y),
+                                (0, 255, 0),
+                                2
+                            )
+
+                        # Draw blue dots over the lines
+                        for landmark in hand_landmarks:
+
+                            x = int(landmark.x * width)
+                            y = int(landmark.y * height)
+
+                            cv2.circle(
+                                frame,
+                                (x, y),
+                                3,
+                                (255, 0, 0),
+                                -1
+                            )
+
+                # =================================================
+                # DISPLAY FEATURES FOR EACH PERSON
+                # =================================================
+
+                for person in people_data:
+
+                    benign_activity = detect_benign_activity(person)
+
+                    activity_text = (
+                        benign_activity
+                        if benign_activity
+                        else "normal"
+                    )
+
+                    person_index = person["person_index"]
+
+                    y_position = 40 + person_index * 125
+
+                    cv2.putText(
+                        frame,
+                        f"Person {person_index + 1}",
+                        (20, y_position),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.7,
+                        (255, 255, 255),
+                        2
+                    )
+
+                    cv2.putText(
+                        frame,
+                        f"Head: {person['head_direction']}",
+                        (20, y_position + 25),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (0, 255, 0),
+                        2
+                    )
+
+                    cv2.putText(
+                        frame,
+                        f"Body: {person['body_orientation']}",
+                        (20, y_position + 50),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (0, 255, 0),
+                        2
+                    )
+
+                    cv2.putText(
+                        frame,
+                        f"Hands: {person['hand_state']}",
+                        (20, y_position + 75),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (0, 255, 0),
+                        2
+                    )
+
+                    cv2.putText(
+                        frame,
+                        f"Activity: {activity_text}",
+                        (20, y_position + 100),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (255, 255, 0),
+                        2
+                    )
+
+                # =================================================
+                # SEND DATA TO BACKEND
+                # =================================================
+
+                current_time = time.time()
+
+                if current_time - last_send_time >= SEND_INTERVAL:
+
+                    for person in people_data:
+
+                        # Detect benign activity
+                        benign_activity = detect_benign_activity(person)
+
+                        pose_data = {
+                            "seat_id": (
+                                f"PERSON-{person['person_index'] + 1}"
+                            ),
+
+                            "timestamp": time.time(),
+
+                            "presence": True,
+
+                            "confidence": 0.95,
+
+                            "pose_features": {
+                                "head_direction":
+                                    person["head_direction"],
+
+                                "body_orientation":
+                                    person["body_orientation"],
+
+                                "hand_state":
+                                    person["hand_state"],
+
+                                "benign_context":
+                                    benign_activity,
+
+                                "activity":
+                                    benign_activity or "normal"
+                            }
+                        }
+
+                        send_pose_data(pose_data)
+
+                    last_send_time = current_time
+
+                # =================================================
+                # SHOW LIVE CAMERA
+                # =================================================
+
+                cv2.imshow(
+                    "PEHRA Edge AI - Multi Person Detection",
+                    frame
+                )
+
+                # Press Q to close
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    break
+
+    finally:
+        camera.release()
+        cv2.destroyAllWindows()
 
 
 # ============================================================

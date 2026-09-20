@@ -120,3 +120,77 @@ def get_head_direction(pose_landmarks):
         return "right"
 
     return "center"
+def detect_benign_activity(person):
+    """
+    Detects simple, likely-benign activities from pose + hand landmarks.
+
+    This is deliberately conservative:
+    - hand near face while head/body remain mostly forward
+      -> possible drinking / face-touch
+    - hand(s) above shoulder level
+      -> stretching
+
+    Returns:
+        str | None
+    """
+
+    pose_landmarks = person.get("pose_landmarks", [])
+    hands = person.get("hands", [])
+
+    if not pose_landmarks:
+        return None
+
+    try:
+        NOSE = 0
+        LEFT_SHOULDER = 11
+        RIGHT_SHOULDER = 12
+
+        nose = pose_landmarks[NOSE]
+        left_shoulder = pose_landmarks[LEFT_SHOULDER]
+        right_shoulder = pose_landmarks[RIGHT_SHOULDER]
+
+        head_direction = person.get("head_direction", "center")
+        body_orientation = person.get("body_orientation", "forward")
+
+        # ---------------------------------------------------------
+        # 1. Possible drinking / face-touch
+        # ---------------------------------------------------------
+        #
+        # Wrist close to nose + head/body mostly forward.
+        #
+        if hands and head_direction == "center" and body_orientation == "forward":
+            for hand in hands:
+                if not hand:
+                    continue
+
+                wrist = hand[0]
+
+                distance_to_face = (
+                    (wrist.x - nose.x) ** 2
+                    + (wrist.y - nose.y) ** 2
+                ) ** 0.5
+
+                if distance_to_face < 0.13:
+                    return "drinking_water"
+
+        # ---------------------------------------------------------
+        # 2. Stretching
+        # ---------------------------------------------------------
+        shoulder_y = min(
+            left_shoulder.y,
+            right_shoulder.y
+        )
+
+        for hand in hands:
+            if not hand:
+                continue
+
+            wrist = hand[0]
+
+            if wrist.y < shoulder_y - 0.08:
+                return "stretching"
+
+        return None
+
+    except (IndexError, AttributeError, TypeError):
+        return None
