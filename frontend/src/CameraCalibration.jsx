@@ -195,8 +195,11 @@ const [detectionError, setDetectionError] = useState("");
   const [actionMessage, setActionMessage] =
     useState("");
 
-  const [isSaved, setIsSaved] =
-    useState(false);
+const [isSaved, setIsSaved] = useState(() => {
+  return (
+    localStorage.getItem("pehraCalibrationComplete") === "true"
+  );
+});
 
 
   const detectClassroomSeats = async () => {
@@ -883,11 +886,28 @@ const isSeatMapped = (seatId) => {
       );
       return;
     }
-
     setIsSaved(true);
-    localStorage.setItem(
+
+localStorage.setItem(
   "pehraCalibrationComplete",
   "true"
+);
+
+localStorage.setItem(
+  "pehraCalibratedSeats",
+  JSON.stringify(mappedSeats)
+);
+
+   setIsSaved(true);
+
+localStorage.setItem(
+  "pehraCalibrationComplete",
+  "true"
+);
+
+localStorage.setItem(
+  "pehraCalibratedSeats",
+  JSON.stringify(mappedSeats)
 );
 
     setActionMessage(
@@ -923,7 +943,9 @@ const isSeatMapped = (seatId) => {
     localStorage.removeItem(
   "pehraCalibrationComplete"
 );
-
+localStorage.removeItem(
+  "pehraCalibratedSeats"
+);
     setActionMessage(
       "Calibration reset. Select the seats covered by this camera."
     );
@@ -1933,14 +1955,18 @@ const isSelected =
     ← Back
   </button>
 
-  <button
-    className="primary-operation-button"
-    disabled={!isSaved}
-   onClick={onProceedToPreCheck}
-  >
-    Proceed to Pre-Exam Check
-    <span>→</span>
-  </button>
+<button
+  className="primary-operation-button"
+  disabled={mappedSeats.length === 0}
+  onClick={() => {
+    if (mappedSeats.length > 0) {
+      onProceedToPreCheck();
+    }
+  }}
+>
+  Proceed to Pre-Exam Check
+  <span>→</span>
+</button>
 </div>
 
     </main>

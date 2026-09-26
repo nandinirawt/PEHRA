@@ -26,9 +26,35 @@ function LiveMonitorWorkspace() {
 
   // Keep these as strings so the user can temporarily empty
   // the input while typing.
-  const [rows, setRows] = useState("12");
+const [rows, setRows] = useState(() => {
+  try {
+    const saved = localStorage.getItem("pehraExamConfig");
 
-  const [seatsPerRow, setSeatsPerRow] = useState("6");
+    if (saved) {
+      const config = JSON.parse(saved);
+      return String(config.rows ?? 1);
+    }
+  } catch (error) {
+    console.error("Unable to load saved rows:", error);
+  }
+
+  return "1";
+});
+
+const [seatsPerRow, setSeatsPerRow] = useState(() => {
+  try {
+    const saved = localStorage.getItem("pehraExamConfig");
+
+    if (saved) {
+      const config = JSON.parse(saved);
+      return String(config.seatsPerRow ?? 1);
+    }
+  } catch (error) {
+    console.error("Unable to load saved seats per row:", error);
+  }
+
+  return "1";
+});
 
   // Convert safely to numbers for calculations.
   const numericRows = Number(rows) || 0;

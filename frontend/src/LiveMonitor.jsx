@@ -932,39 +932,83 @@ const getSeatEvents = (seatId) => {
 function LiveMonitor() {
 
 
-  const [hallConfig, setHallConfig] = useState(() => {
+  const createSeatsFromConfig = (rows, columnsPerRow) => {
+  const seats = [];
 
-    try {
+  for (let rowIndex = 0; rowIndex < rows; rowIndex++) {
+    const row = String.fromCharCode(65 + rowIndex);
 
-      const saved =
-        localStorage.getItem(
-          "pehraHallConfig"
-        );
+    for (let column = 1; column <= columnsPerRow; column++) {
+      seats.push({
+        seat_id: `${row}-${String(column).padStart(2, "0")}`,
+        row,
+        column,
+        status: "normal",
+      });
+    }
+  }
 
-      if (saved) {
-        return JSON.parse(saved);
-      }
+  return seats;
+};
 
-    } catch (error) {
 
-      console.error(
-        "Unable to load PEHRA hall configuration:",
-        error
-      );
+const [hallConfig, setHallConfig] = useState(() => {
 
+  try {
+    const saved = localStorage.getItem("pehraExamConfig");
+
+    if (saved) {
+      const config = JSON.parse(saved);
+
+      const rows = Number(config.rows) || 1;
+      const columnsPerRow = Number(config.seatsPerRow) || 1;
+
+      return {
+        total_seats: rows * columnsPerRow,
+        columns_per_row: columnsPerRow,
+        rows,
+        seats: createSeatsFromConfig(rows, columnsPerRow),
+      };
     }
 
-    return {
-      total_seats: 72,
-      columns_per_row: 6,
-      rows: 12,
-      seats: defaultSeats,
-    };
+  } catch (error) {
+    console.error(
+      "Unable to load PEHRA exam configuration:",
+      error
+    );
+  }
 
-  });
+  return {
+    total_seats: 1,
+    columns_per_row: 1,
+    rows: 1,
+    seats: createSeatsFromConfig(1, 1),
+  };
+
+});
 
 
-  const seats = hallConfig.seats || defaultSeats;
+ const calibratedSeatIds = (() => {
+  try {
+    const saved = localStorage.getItem(
+      "pehraCalibratedSeats"
+    );
+
+    return saved
+      ? JSON.parse(saved)
+      : [];
+  } catch {
+    return [];
+  }
+})();
+
+const seats =
+  calibratedSeatIds.length > 0
+    ? (hallConfig.seats || defaultSeats).filter(
+        (seat) =>
+          calibratedSeatIds.includes(seat.seat_id)
+      )
+    : (hallConfig.seats || defaultSeats);
 
 
   const calibration = {
@@ -987,9 +1031,9 @@ function LiveMonitor() {
     try {
 
       const saved =
-        localStorage.getItem(
-          "pehraHallConfig"
-        );
+  localStorage.getItem(
+    "pehraExamConfig"
+  );
 
       if (saved) {
 
@@ -1365,17 +1409,17 @@ const selectedRiskState = getRiskState(
      FLAGGED SEATS
      ========================================================== */
 
-  const activeFlaggedSeatIds = Array.from(
+ const activeFlaggedSeatIds = Array.from(
   new Set([
-    ...riskStates.map(
-      (risk) => risk.seat_id
-    ),
-
-    ...backendRiskStates.map(
-      (risk) => risk.seat_id
-    ),
+    ...riskStates.map((risk) => risk.seat_id),
+    ...backendRiskStates.map((risk) => risk.seat_id),
   ])
 ).filter((seatId) => {
+
+  // Only show flagged seats that are actually calibrated/displayed
+  if (!seats.some((seat) => seat.seat_id === seatId)) {
+    return false;
+  }
 
   const state = getRiskState(
     seatId,

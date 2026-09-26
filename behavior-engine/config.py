@@ -20,10 +20,10 @@ MIN_INDEPENDENT_SIGNALS = 2
 
 # Risk Decay Constants
 # Grace period: Wait 45 seconds of normal behavior before risk even begins to decay
-DECAY_GRACE_PERIOD_SECONDS = 45.0
+DECAY_GRACE_PERIOD_SECONDS = 7
 
 # Decay rate: 0.5 points per second (Takes ~80 seconds to decay from High Risk 80 -> Under Review 40)
-DECAY_RATE_PER_SECOND = 0.5
+DECAY_RATE_PER_SECOND = 1.0
 
 # Backend API Endpoints
 DEFAULT_BACKEND_URL = 'http://127.0.0.1:8000/api'
