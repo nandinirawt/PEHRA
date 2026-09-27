@@ -24,6 +24,9 @@ app.include_router(pose.router)
 app.include_router(events.router)
 app.include_router(risk.router)
 app.include_router(reviews.router)
+from app.routers import ledger
+
+app.include_router(ledger.router)
 app.include_router(privacy.router)
 
 # Real-Time WebSocket Channel

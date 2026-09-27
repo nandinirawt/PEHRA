@@ -89,3 +89,4 @@ class CalibrationSchema(BaseModel):
 class ReviewActionSchema(BaseModel):
     action: str
     notes: Optional[str] = None
+    event_id: Optional[str] = None

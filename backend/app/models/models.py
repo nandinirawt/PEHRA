@@ -67,3 +67,33 @@ class CalibrationRecord(Base):
     seat_ids = Column(JSON)
     coverage = Column(Float)
     status = Column(String)
+# --- P4 Ledger & Integrity Models ---
+class ReviewRecord(Base):
+    __tablename__ = "reviews"
+
+    review_id = Column(String, primary_key=True, index=True)
+    exam_id = Column(String, index=True)
+    seat_id = Column(String, index=True)
+    event_id = Column(String, index=True)
+    decision = Column(String)  # confirm_incident, false_alarm, keep_under_review
+    reviewer_note = Column(String, nullable=True)
+    timestamp = Column(String)
+
+class IntegrityRecord(Base):
+    __tablename__ = "integrity_records"
+
+    record_id = Column(String, primary_key=True, index=True)
+    exam_id = Column(String, index=True)
+    record_type = Column(String)  # review_decision, session_digest
+    content_hash = Column(String, nullable=False)
+    signature = Column(String, nullable=False)
+    timestamp = Column(String, nullable=False)
+
+class DltTransactionRecord(Base):
+    __tablename__ = "dlt_transactions"
+
+    tx_id = Column(String, primary_key=True, index=True)
+    record_id = Column(String, index=True)
+    block_ref = Column(String)
+    node_confirmations = Column(Integer, default=1)
+    chain_timestamp = Column(String)
