@@ -1,4 +1,5 @@
 from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -31,4 +32,5 @@ class CalibrationResult(BaseModel):
     mapped_seats: int
     coverage_percentage: float
     missing_seats: List[str]
+    unexpected_seats: List[str]
     duplicate_seats: List[str]

@@ -23,7 +23,9 @@ service = CalibrationService()
 def start_calibration(
     request: StartCalibrationRequest,
 ):
-    return service.start(request)
+    return service.start(
+        request
+    )
 
 
 @router.post(
@@ -68,7 +70,9 @@ def validate_calibration(
         )
 
 
-@router.get("/{exam_id}")
+@router.get(
+    "/{exam_id}"
+)
 def get_calibration(
     exam_id: str,
 ):
@@ -85,26 +89,36 @@ def get_calibration(
         )
 
 
-@router.post("/{exam_id}/complete")
+@router.post(
+    "/{exam_id}/complete"
+)
 def complete_calibration(
     exam_id: str
 ):
 
     try:
+
         result = service.validate(
             exam_id
         )
 
         if result.status != "calibrated":
+
             raise HTTPException(
                 status_code=400,
                 detail={
                     "message":
                         "Calibration is not valid yet.",
+
                     "status":
                         result.status,
+
                     "missing_seats":
                         result.missing_seats,
+
+                    "unexpected_seats":
+                        result.unexpected_seats,
+
                     "duplicate_seats":
                         result.duplicate_seats,
                 },
@@ -118,6 +132,7 @@ def complete_calibration(
         }
 
     except ValueError as error:
+
         raise HTTPException(
             status_code=404,
             detail=str(error),
