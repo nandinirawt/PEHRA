@@ -4,10 +4,10 @@ from pathlib import Path
 
 from web3 import Web3
 
+from ledger.chain.local_chain import NODES
 
-RPC_URL = "http://127.0.0.1:8545"
 
-CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+RPC_URL = NODES["university"]["rpc_url"]
 
 ARTIFACT_PATH = (
     Path(__file__).resolve().parent.parent
@@ -31,8 +31,10 @@ class LedgerClient:
         with open(ARTIFACT_PATH, "r", encoding="utf-8") as f:
             artifact = json.load(f)
 
+        contract_address = NODES["university"]["contract_address"]
+
         self.contract = self.w3.eth.contract(
-            address=Web3.to_checksum_address(CONTRACT_ADDRESS),
+            address=Web3.to_checksum_address(contract_address),
             abi=artifact["abi"],
         )
 
@@ -71,6 +73,31 @@ class LedgerClient:
 
         return receipt.transactionHash.hex()
 
+    def record_event(
+        self,
+        exam_id: str,
+        record_id: str,
+        content_hash: str,
+        signature: str,
+    ) -> str:
+        exam_id_bytes = self._id_to_bytes32(exam_id)
+        record_id_bytes = self._id_to_bytes32(record_id)
+        hash_bytes = self._hash_to_bytes32(content_hash)
+        signature_bytes = self._signature_to_bytes(signature)
+
+        tx_hash = self.contract.functions.recordEvent(
+            exam_id_bytes,
+            record_id_bytes,
+            hash_bytes,
+            signature_bytes,
+        ).transact({
+            "from": self.account,
+        })
+
+        receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+
+        return receipt.transactionHash.hex()
+
     def record_review(
         self,
         exam_id: str,
@@ -96,7 +123,6 @@ class LedgerClient:
 
         return receipt.transactionHash.hex()
 
-    # ADD THIS HERE
     def close_exam(
         self,
         exam_id: str,

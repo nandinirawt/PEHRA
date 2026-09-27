@@ -43,7 +43,10 @@ contract IntegrityLedger {
 
         examExists[examId] = true;
 
-        emit ExamCreated(examId, block.timestamp);
+        emit ExamCreated(
+            examId,
+            block.timestamp
+        );
     }
 
     function recordEvent(
@@ -139,7 +142,10 @@ contract IntegrityLedger {
         bytes32 recordId,
         bytes32 expectedHash
     ) external view returns (bool) {
-        require(records[recordId].timestamp != 0, "Record does not exist");
+        require(
+            records[recordId].timestamp != 0,
+            "Record does not exist"
+        );
 
         return records[recordId].contentHash == expectedHash;
     }
