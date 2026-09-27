@@ -1,0 +1,42 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_24-bdafb0b013033788e938c6880af4908be7552769",
+  "solcVersion": "0.8.24",
+  "solcLongVersion": "0.8.24+commit.e11b9ed9",
+  "compilerType": "solc",
+  "userSourceNameMap": {
+    "contracts/IntegrityLedger.sol": "project/contracts/IntegrityLedger.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "shanghai",
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/IntegrityLedger.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.24;\n\ncontract IntegrityLedger {\n    enum RecordType {\n        Review,\n        SessionSummary\n    }\n\n    struct Record {\n        bytes32 examId;\n        bytes32 contentHash;\n        bytes signature;\n        uint256 timestamp;\n        RecordType recordType;\n    }\n\n    mapping(bytes32 => bool) public examExists;\n    mapping(bytes32 => Record) public records;\n    mapping(bytes32 => bool) public examClosed;\n\n    event ExamCreated(\n        bytes32 indexed examId,\n        uint256 timestamp\n    );\n\n    event RecordStored(\n        bytes32 indexed recordId,\n        bytes32 indexed examId,\n        bytes32 contentHash,\n        RecordType recordType,\n        uint256 timestamp\n    );\n\n    event ExamClosed(\n        bytes32 indexed examId,\n        bytes32 indexed recordId,\n        uint256 timestamp\n    );\n\n    function createExam(bytes32 examId) external {\n        require(!examExists[examId], \"Exam already exists\");\n\n        examExists[examId] = true;\n\n        emit ExamCreated(examId, block.timestamp);\n    }\n\n    function recordEvent(\n        bytes32 examId,\n        bytes32 recordId,\n        bytes32 contentHash,\n        bytes calldata signature\n    ) external {\n        require(examExists[examId], \"Exam does not exist\");\n        require(!examClosed[examId], \"Exam already closed\");\n        require(records[recordId].timestamp == 0, \"Record already exists\");\n\n        records[recordId] = Record({\n            examId: examId,\n            contentHash: contentHash,\n            signature: signature,\n            timestamp: block.timestamp,\n            recordType: RecordType.Review\n        });\n\n        emit RecordStored(\n            recordId,\n            examId,\n            contentHash,\n            RecordType.Review,\n            block.timestamp\n        );\n    }\n\n    function recordReview(\n        bytes32 examId,\n        bytes32 recordId,\n        bytes32 contentHash,\n        bytes calldata signature\n    ) external {\n        require(examExists[examId], \"Exam does not exist\");\n        require(!examClosed[examId], \"Exam already closed\");\n        require(records[recordId].timestamp == 0, \"Record already exists\");\n\n        records[recordId] = Record({\n            examId: examId,\n            contentHash: contentHash,\n            signature: signature,\n            timestamp: block.timestamp,\n            recordType: RecordType.Review\n        });\n\n        emit RecordStored(\n            recordId,\n            examId,\n            contentHash,\n            RecordType.Review,\n            block.timestamp\n        );\n    }\n\n    function closeExam(\n        bytes32 examId,\n        bytes32 recordId,\n        bytes32 contentHash,\n        bytes calldata signature\n    ) external {\n        require(examExists[examId], \"Exam does not exist\");\n        require(!examClosed[examId], \"Exam already closed\");\n        require(records[recordId].timestamp == 0, \"Record already exists\");\n\n        records[recordId] = Record({\n            examId: examId,\n            contentHash: contentHash,\n            signature: signature,\n            timestamp: block.timestamp,\n            recordType: RecordType.SessionSummary\n        });\n\n        examClosed[examId] = true;\n\n        emit RecordStored(\n            recordId,\n            examId,\n            contentHash,\n            RecordType.SessionSummary,\n            block.timestamp\n        );\n\n        emit ExamClosed(\n            examId,\n            recordId,\n            block.timestamp\n        );\n    }\n\n    function verifyEvent(\n        bytes32 recordId,\n        bytes32 expectedHash\n    ) external view returns (bool) {\n        require(records[recordId].timestamp != 0, \"Record does not exist\");\n\n        return records[recordId].contentHash == expectedHash;\n    }\n}\n"
+      }
+    }
+  }
+}
