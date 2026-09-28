@@ -33,7 +33,7 @@ async def handle_review_action(exam_id: str, seat_id: str, action_data: ReviewAc
 
     timestamp = datetime.datetime.utcnow().isoformat() + "Z"
     event_id = getattr(action_data, "event_id", None) or f"evt-{uuid.uuid4().hex[:8]}"
-    reviewer_note = getattr(action_data, "note", None)
+    reviewer_note = getattr(action_data, "notes", None)
 
     ledger_tx = None
 

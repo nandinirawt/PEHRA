@@ -4,7 +4,7 @@ import { patch } from "./api/client";
  
 const CURRENT_USER_ROLE = "invigilator";
 const API_BASE_URL = "http://localhost:8000";
-const EXAM_ID = "EXAM-MATH-001";
+const EXAM_ID = "EXAM-101";
 const CHIEF_HALLS = [
   {
     hall_id: "HALL-A",
@@ -53,7 +53,7 @@ const CHIEF_HALLS = [
    ============================================================ */
 
 const exam = {
-  exam_id: "EXAM-MATH-001",
+  exam_id: "EXAM-101",
   name: "Semester End Examination",
   subject: "Mathematics",
   hall_id: "HALL-A",
@@ -1072,6 +1072,10 @@ useEffect(() => {
   const [backendRiskStates, setBackendRiskStates] = useState([]);
   const [actionMessage, setActionMessage] = useState("");
   const [ledgerTx, setLedgerTx] = useState(null);
+  const [ledgerEventId, setLedgerEventId] = useState(null);
+  const [integrityVerification, setIntegrityVerification] = useState(null);
+const [verificationLoading, setVerificationLoading] = useState(false);
+const [verificationError, setVerificationError] = useState("");
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState("");
 /* ==========================================================
@@ -1264,8 +1268,13 @@ useEffect(() => {
       // confirm_incident returns the ledger transaction metadata.
       if (backendAction === "confirm_incident") {
         setLedgerTx(response?.ledger_tx ?? null);
+        setLedgerEventId(response?.event_id ?? latestEvent?.event_id ?? null);
+        setIntegrityVerification(null);
+        setVerificationError("");
       } else {
         setLedgerTx(null);
+        setLedgerEventId(null);
+        setIntegrityVerification(null);
       }
 
       if (backendAction === "confirm_incident") {
@@ -1289,6 +1298,40 @@ useEffect(() => {
       );
     } finally {
       setReviewLoading(false);
+    }
+  };
+
+
+  /* ==========================================================
+     TRUST & INTEGRITY — VERIFY ANCHORED RECORD
+     ========================================================== */
+  const verifyIntegrity = async () => {
+    if (!ledgerEventId || verificationLoading) return;
+
+    setVerificationLoading(true);
+    setVerificationError("");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/ledger/verify/${encodeURIComponent(ledgerEventId)}`
+      );
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          payload?.detail || `Integrity verification failed (${response.status}).`
+        );
+      }
+
+      setIntegrityVerification(payload);
+    } catch (error) {
+      console.error("Unable to verify ledger integrity:", error);
+      setIntegrityVerification(null);
+      setVerificationError(
+        error?.message || "Unable to verify the anchored integrity record."
+      );
+    } finally {
+      setVerificationLoading(false);
     }
   };
 
@@ -1335,6 +1378,9 @@ useEffect(() => {
 
           if (payload.ledger_tx && seatId === selectedSeat) {
             setLedgerTx(payload.ledger_tx);
+            setLedgerEventId(payload.event_id || null);
+            setIntegrityVerification(null);
+            setVerificationError("");
           }
         } catch (error) {
           console.warn("Invalid PEHRA WebSocket message:", error);
@@ -1913,9 +1959,14 @@ const selectedRiskState = getRiskState(
                       ]
                         .filter(Boolean)
                         .join(" ")}
-                      onClick={() =>
-                        setSelectedSeat(seatId)
-                      }
+                      onClick={() => {
+                        setSelectedSeat(seatId);
+                        setLedgerTx(null);
+                        setLedgerEventId(null);
+                        setIntegrityVerification(null);
+                        setVerificationError("");
+                        setActionMessage("");
+                      }}
                       aria-label={`Seat ${seatId}, status ${status}`}
                     >
 
@@ -2056,10 +2107,11 @@ const selectedRiskState = getRiskState(
 
                       onClick={() => {
 
-                        setSelectedSeat(
-                          seatId
-                        );
-
+                        setSelectedSeat(seatId);
+                        setLedgerTx(null);
+                        setLedgerEventId(null);
+                        setIntegrityVerification(null);
+                        setVerificationError("");
                         setActionMessage("");
 
                       }}
@@ -2917,28 +2969,65 @@ const selectedRiskState = getRiskState(
       ================================================= */}
 
   <div className="ledger-verification">
-
     <div className="verification-icon">
-      ✓
+      {integrityVerification?.status === "TAMPERED" ? "!" : "✓"}
     </div>
-
-    <div>
-
+    <div className="verification-content">
       <strong>
-        Ledger Verified
+        {integrityVerification
+          ? integrityVerification.status === "VERIFIED"
+            ? "Integrity Verified"
+            : "Integrity Mismatch Detected"
+          : "Integrity Verification"}
       </strong>
-
       <span>
-        The decision has been anchored to the
-        examination integrity ledger.
+        {integrityVerification
+          ? integrityVerification.status === "VERIFIED"
+            ? "Stored fingerprint matches the recomputed fingerprint and the ledger record."
+            : "The stored fingerprint does not match the recomputed fingerprint. Review the record before trusting it."
+          : "Recompute the SHA-256 fingerprint and compare it with the anchored integrity record."}
       </span>
-
+      <button
+        type="button"
+        className="verify-integrity-btn"
+        onClick={verifyIntegrity}
+        disabled={verificationLoading || !ledgerEventId}
+      >
+        {verificationLoading ? "Verifying..." : "Verify Integrity"}
+      </button>
     </div>
-
   </div>
 
+  {integrityVerification && (
+    <div className={`integrity-verification-result ${
+      integrityVerification.status === "VERIFIED" ? "verified" : "tampered"
+    }`}>
+      <div className="verification-result-header">
+        <span>VERIFICATION RESULT</span>
+        <strong>{integrityVerification.status}</strong>
+      </div>
+      <div className="verification-hash-grid">
+        <div className="ledger-detail"><span>Stored Fingerprint</span><strong>{integrityVerification.stored_hash || "—"}</strong></div>
+        <div className="ledger-detail"><span>Recomputed Fingerprint</span><strong>{integrityVerification.recomputed_hash || "—"}</strong></div>
+        <div className="ledger-detail"><span>Transaction</span><strong>{integrityVerification.tx_ref || ledgerTx?.tx_ref || "—"}</strong></div>
+        <div className="ledger-detail"><span>Signature</span><strong>{integrityVerification.signature || "—"}</strong></div>
+      </div>
+      <div className="verification-check-line">
+        {integrityVerification.status === "VERIFIED"
+          ? "✓ Hash match confirmed — integrity record is consistent."
+          : "⚠ Hash mismatch — possible tampering or record inconsistency detected."}
+      </div>
+    </div>
+  )}
 
-  {/* =================================================
+  {verificationError && (
+    <div className="action-message" style={{ color: "#b42318" }}>
+      <span className="privacy-dot"></span>
+      {verificationError}
+    </div>
+  )}
+
+{/* =================================================
       AUDIT NOTE
       ================================================= */}
 
