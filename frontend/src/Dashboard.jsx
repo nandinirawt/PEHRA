@@ -8,6 +8,7 @@ function Dashboard() {
           WELCOME
       ========================== */}
       <section className="welcome">
+
         <div>
           <p className="eyebrow">
             EXAMINATION CONTROL CENTER
@@ -26,6 +27,7 @@ function Dashboard() {
           <span className="status-live"></span>
           System Active
         </div>
+
       </section>
 
 
@@ -55,11 +57,6 @@ function Dashboard() {
 
         </div>
 
-        <button className="monitor-button">
-          Open Live Monitor
-          <span>→</span>
-        </button>
-
       </section>
 
 
@@ -69,6 +66,7 @@ function Dashboard() {
       <section className="stats">
 
         <div className="stat-card">
+
           <div className="stat-top">
             <span className="status-dot neutral"></span>
             <span>Today's Exams</span>
@@ -81,10 +79,12 @@ function Dashboard() {
           <div className="stat-detail">
             1 active · 2 upcoming · 1 completed
           </div>
+
         </div>
 
 
         <div className="stat-card">
+
           <div className="stat-top">
             <span className="status-dot review"></span>
             <span>Upcoming</span>
@@ -97,10 +97,12 @@ function Dashboard() {
           <div className="stat-detail">
             Next exam at 02:00 PM
           </div>
+
         </div>
 
 
         <div className="stat-card">
+
           <div className="stat-top">
             <span className="status-dot normal"></span>
             <span>Completed</span>
@@ -113,10 +115,12 @@ function Dashboard() {
           <div className="stat-detail">
             Completed today
           </div>
+
         </div>
 
 
         <div className="stat-card">
+
           <div className="stat-top">
             <span className="status-dot high"></span>
             <span>Attention</span>
@@ -129,6 +133,7 @@ function Dashboard() {
           <div className="stat-detail">
             Items requiring review
           </div>
+
         </div>
 
       </section>
@@ -361,7 +366,6 @@ function Dashboard() {
         </div>
 
       </section>
-
 
     </main>
   );
