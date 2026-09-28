@@ -932,3 +932,51 @@
   }
 
 }
+/* ==========================================================
+   CURRENT HALL CONTEXT
+   ========================================================== */
+
+.current-hall-context {
+  margin: 4px 10px 10px;
+  padding: 9px 10px;
+  border-left: 2px solid #12b76a;
+  border-radius: 0 7px 7px 0;
+  background: #f8fafc;
+}
+
+.current-hall-label {
+  display: block;
+  margin-bottom: 5px;
+  color: #98a2b3;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.current-hall-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.current-hall-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: #12b76a;
+}
+
+.current-hall-name strong {
+  color: #344054;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.current-hall-description {
+  display: block;
+  margin-top: 3px;
+  margin-left: 13px;
+  color: #98a2b3;
+  font-size: 10px;
+}

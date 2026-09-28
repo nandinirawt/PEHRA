@@ -1,7 +1,33 @@
 import { useEffect, useState } from "react";
 import "./LiveMonitor.css";
+import { patch } from "./api/client";
+ 
+const CURRENT_USER_ROLE = "invigilator";
 const API_BASE_URL = "http://localhost:8000";
-const EXAM_ID = "EXAM-101";
+const EXAM_ID = "EXAM-MATH-001";
+const CHIEF_HALLS = [
+  {
+    hall_id: "HALL-A",
+    name: "Hall A",
+    rows: 12,
+    columns_per_row: 6,
+    total_seats: 72,
+  },
+  {
+    hall_id: "HALL-B",
+    name: "Hall B",
+    rows: 10,
+    columns_per_row: 6,
+    total_seats: 60,
+  },
+  {
+    hall_id: "HALL-C",
+    name: "Hall C",
+    rows: 8,
+    columns_per_row: 6,
+    total_seats: 48,
+  },
+];
 /*
  * ============================================================
  * PEHRA - VERSION 1 MOCK DATA
@@ -16,8 +42,8 @@ const EXAM_ID = "EXAM-101";
  * RISK_STATE
  * CALIBRATION
  *
- * No backend connection yet.
- * Version 1 uses mock data only.
+ * The hall/event presentation still uses local V1 mock data,
+ * while review actions are persisted through the live backend API.
  * ============================================================
  */
 
@@ -914,7 +940,18 @@ const getSeatEvents = (seatId) => {
    ============================================================ */
 
 function LiveMonitor() {
+  const isChiefInvigilator =
+    CURRENT_USER_ROLE === "chief";
 
+  const isInvigilator =
+    CURRENT_USER_ROLE === "invigilator";
+    const [activeHallId, setActiveHallId] =
+  useState("HALL-A");
+
+const activeChiefHall =
+  CHIEF_HALLS.find(
+    (hall) => hall.hall_id === activeHallId
+  ) || CHIEF_HALLS[0];
   const [hallConfig, setHallConfig] = useState(() => {
 
     try {
@@ -1032,8 +1069,11 @@ useEffect(() => {
    * These are temporary frontend actions for Version 1.
    */
   const [seatOverrides, setSeatOverrides] = useState({});
-const [backendRiskStates, setBackendRiskStates] = useState([]);
+  const [backendRiskStates, setBackendRiskStates] = useState([]);
   const [actionMessage, setActionMessage] = useState("");
+  const [ledgerTx, setLedgerTx] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState("");
 /* ==========================================================
    V2 — LOAD BACKEND RISK STATES
    ========================================================== */
@@ -1164,65 +1204,152 @@ useEffect(() => {
      ACTION HANDLER
      ========================================================== */
 
-  const handleSeatAction = (action) => {
-
-    if (action === "confirmed") {
-
-      setActionMessage(
-        `Incident confirmed for seat ${selectedSeat}.`
-      );
-
+  const handleSeatAction = async (action) => {
+    if (!selectedSeat || reviewLoading) {
       return;
     }
 
+    const actionMap = {
+      confirmed: "confirm_incident",
+      normal: "false_alarm",
+      review: "keep_under_review",
+    };
 
-    if (action === "normal") {
+    const backendAction = actionMap[action];
 
-      setSeatOverrides((previous) => ({
-        ...previous,
-
-        [selectedSeat]: {
-          status: "normal",
-          risk_score: 8,
-          confidence: 0.91,
-        },
-      }));
-
-      setActionMessage(
-        `Seat ${selectedSeat} marked as a false alarm.`
-      );
-
+    if (!backendAction) {
       return;
     }
 
+    const latestEvent =
+      selectedEvents[selectedEvents.length - 1];
 
-    if (action === "review") {
+    setReviewLoading(true);
+    setReviewError("");
+    setActionMessage("");
+
+    try {
+      const response = await patch(
+        `/api/exams/${EXAM_ID}/reviews/${encodeURIComponent(selectedSeat)}`,
+        {
+          action: backendAction,
+          event_id: latestEvent?.event_id ?? null,
+          notes: `Reviewed from Live Monitor for seat ${selectedSeat}.`,
+        }
+      );
+
+      const newStatus =
+        response?.seat_status ||
+        (backendAction === "confirm_incident"
+          ? "high_risk"
+          : backendAction === "false_alarm"
+          ? "normal"
+          : "under_review");
+
+      const currentRisk = getRiskState(
+        selectedSeat,
+        seatOverrides,
+        backendRiskStates
+      );
 
       setSeatOverrides((previous) => ({
         ...previous,
-
         [selectedSeat]: {
-          status: "under_review",
-          risk_score:
-            getRiskState(
-  selectedSeat,
-  previous,
-  backendRiskStates
-).risk_score,
-          confidence:
-            getRiskState(
-  selectedSeat,
-  previous,
-  backendRiskStates
-).confidence,
+          status: newStatus,
+          risk_score: response?.risk_score ?? currentRisk.risk_score,
+          confidence: response?.confidence ?? currentRisk.confidence,
         },
       }));
 
-      setActionMessage(
-        `Seat ${selectedSeat} kept under review.`
+      // confirm_incident returns the ledger transaction metadata.
+      if (backendAction === "confirm_incident") {
+        setLedgerTx(response?.ledger_tx ?? null);
+      } else {
+        setLedgerTx(null);
+      }
+
+      if (backendAction === "confirm_incident") {
+        setActionMessage(
+          `Incident confirmed for seat ${selectedSeat}.`
+        );
+      } else if (backendAction === "false_alarm") {
+        setActionMessage(
+          `Seat ${selectedSeat} marked as a false alarm.`
+        );
+      } else {
+        setActionMessage(
+          `Seat ${selectedSeat} kept under review.`
+        );
+      }
+    } catch (error) {
+      console.error("Unable to submit review action:", error);
+      setReviewError(
+        error?.message ||
+          "Unable to submit the review action. Please try again."
       );
+    } finally {
+      setReviewLoading(false);
     }
   };
+
+
+  /* ==========================================================
+     V2 — REVIEW ACTION WEBSOCKET
+     ========================================================== */
+  useEffect(() => {
+    let socket;
+
+    try {
+      const wsBase = API_BASE_URL.replace(/^http/, "ws");
+      socket = new WebSocket(
+        `${wsBase}/ws/exams/${EXAM_ID}`
+      );
+
+      socket.onmessage = (message) => {
+        try {
+          const payload = JSON.parse(message.data);
+
+          if (payload?.type !== "REVIEW_ACTION") {
+            return;
+          }
+
+          const seatId = payload.seat_id;
+          if (!seatId) {
+            return;
+          }
+
+          const newStatus = payload.new_status ||
+            (payload.action === "confirm_incident"
+              ? "high_risk"
+              : payload.action === "false_alarm"
+              ? "normal"
+              : "under_review");
+
+          setSeatOverrides((previous) => ({
+            ...previous,
+            [seatId]: {
+              ...(previous[seatId] || {}),
+              status: newStatus,
+            },
+          }));
+
+          if (payload.ledger_tx && seatId === selectedSeat) {
+            setLedgerTx(payload.ledger_tx);
+          }
+        } catch (error) {
+          console.warn("Invalid PEHRA WebSocket message:", error);
+        }
+      };
+    } catch (error) {
+      console.warn("Unable to connect to PEHRA review WebSocket:", error);
+    }
+
+    return () => {
+      if (socket) {
+        socket.close();
+      }
+    };
+  }, [selectedSeat]);
 
 
   /* ==========================================================
@@ -1323,105 +1450,263 @@ const selectedRiskState = getRiskState(
     <main className="live-monitor-page">
 
 
-      {/* ======================================================
-          HEADER
-          ====================================================== */}
+{/* ======================================================
+    HEADER — STEP 1 UI
+    ====================================================== */}
 
-      <section className="live-header">
+<section className="live-header live-header-v2">
+{isChiefInvigilator && (
+  <div className="chief-hall-switcher">
 
-        <div>
+    <div className="chief-hall-switcher-header">
 
-          <span className="eyebrow">
-            LIVE EXAMINATION
+      <div>
+        <span className="eyebrow small">
+          CHIEF OVERSIGHT
+        </span>
+
+        <h3>
+          Examination Halls
+        </h3>
+      </div>
+
+      <span className="chief-hall-count">
+        {CHIEF_HALLS.length} Halls
+      </span>
+
+    </div>
+
+
+    <div className="chief-hall-list">
+
+      {CHIEF_HALLS.map((hall) => (
+
+        <button
+          key={hall.hall_id}
+          type="button"
+          className={
+            activeHallId === hall.hall_id
+              ? "chief-hall-item active"
+              : "chief-hall-item"
+          }
+          onClick={() => {
+            setActiveHallId(hall.hall_id);
+
+            setSelectedSeat(
+              `${String.fromCharCode(65 + hall.rows - 1)}-01`
+            );
+          }}
+        >
+
+          <span className="chief-hall-status"></span>
+
+          <span className="chief-hall-info">
+
+            <strong>
+              {hall.name}
+            </strong>
+
+            <span>
+              {hall.total_seats} seats
+            </span>
+
           </span>
 
+          {activeHallId === hall.hall_id && (
+            <span className="chief-hall-active">
+              ACTIVE
+            </span>
+          )}
 
-          <h1>
-            {exam.name} — {exam.subject}
-          </h1>
+        </button>
+
+      ))}
+
+    </div>
+
+  </div>
+)}
+  {/* LEFT — EXAM INFORMATION */}
+  <div className="live-header-main">
+
+    <div className="live-header-eyebrow-row">
+      <span className="eyebrow">
+        LIVE EXAMINATION
+      </span>
+
+      <span className="live-status-badge">
+  <span className="live-status-dot"></span>
+  EXAM LIVE
+</span>
+
+<span className="live-role-badge">
+  {isChiefInvigilator
+    ? "CHIEF INVIGILATOR"
+    : "INVIGILATOR"}
+</span>
+    </div>
+
+    <h1>
+      {exam.name} — {exam.subject}
+    </h1>
+
+    <div className="exam-meta">
+
+      <span>
+        {isChiefInvigilator
+  ? activeChiefHall.hall_id
+  : exam.hall_id || "HALL-A"}
+      </span>
+
+      <span>•</span>
+
+      <span>
+        {isChiefInvigilator
+  ? activeChiefHall.total_seats
+  : seats.length} Seats
+      </span>
+
+      <span>•</span>
+
+      <span>
+        {exam.start_time} — {exam.end_time}
+      </span>
+
+    </div>
+   <div className="monitoring-scope">
+
+  <div className="monitoring-scope-label">
+    MONITORING SCOPE
+  </div>
+
+  <div className="monitoring-scope-content">
+
+    <span className="monitoring-scope-dot"></span>
+
+    <div>
+      <strong>
+        {exam.hall_id || "HALL-A"}
+      </strong>
+
+      <span>
+        Current examination hall
+      </span>
+    </div>
+
+  </div>
+
+</div>
+  </div>
 
 
-          <div className="exam-meta">
+  {/* RIGHT — MONITORING STATUS */}
+  <div className="live-header-status">
 
-            <span>Hall A</span>
+    <div className="monitoring-label">
+      MONITORING STATUS
+    </div>
 
-            <span>•</span>
+    <div className="monitoring-value">
+      <span className="monitoring-dot"></span>
+      Active
+    </div>
 
-           <span>{seats.length} Seats</span>
+    <div className="monitoring-subtext">
+      Processing locally · No identity data captured
+    </div>
 
-            <span>•</span>
+  </div>
 
-            <span>01:24:32 elapsed</span>
-
-          </div>
-
-        </div>
+</section>
 
 
-        <div className="monitor-status">
+{/* ======================================================
+    LIVE SUMMARY — STEP 1
+    ====================================================== */}
 
-          <span className="status-dot normal"></span>
+<section className="live-summary-grid">
 
-          Monitoring Active
+  {/* TOTAL SEATS */}
+  <div className="live-summary-card">
 
-        </div>
+    <div className="summary-label">
+      TOTAL SEATS
+    </div>
 
-      </section>
+    <div className="summary-value">
+      {seats.length}
+    </div>
+
+    <div className="summary-description">
+      Configured for this hall
+    </div>
+
+  </div>
+
+
+  {/* NORMAL */}
+  <div className="live-summary-card">
+
+    <div className="summary-label">
+      NORMAL
+    </div>
+
+    <div className="summary-value">
+      {normalCount}
+    </div>
+
+    <div className="summary-description">
+      No active concern
+    </div>
+
+  </div>
+
+
+  {/* UNDER REVIEW */}
+  <div className="live-summary-card summary-warning">
+
+    <div className="summary-label">
+      UNDER REVIEW
+    </div>
+
+    <div className="summary-value">
+      {reviewCount}
+    </div>
+
+    <div className="summary-description">
+      Requires attention
+    </div>
+
+  </div>
+
+
+  {/* HIGH RISK */}
+  <div className="live-summary-card summary-danger">
+
+    <div className="summary-label">
+      HIGH RISK
+    </div>
+
+    <div className="summary-value">
+      {highRiskCount}
+    </div>
+
+    <div className="summary-description">
+      Immediate review
+    </div>
+
+  </div>
+
+</section>
+```
+
 
 
       {/* ======================================================
           QUICK SUMMARY
           ====================================================== */}
 
-      <section className="monitor-summary">
-
-
-        <div className="summary-item">
-
-          <span className="summary-dot normal"></span>
-
-          <span>Normal</span>
-
-          <strong>{normalCount}</strong>
-
-        </div>
-
-
-        <div className="summary-item">
-
-          <span className="summary-dot review"></span>
-
-          <span>Under Review</span>
-
-          <strong>{reviewCount}</strong>
-
-        </div>
-
-
-        <div className="summary-item">
-
-          <span className="summary-dot high"></span>
-
-          <span>High Risk</span>
-
-          <strong>{highRiskCount}</strong>
-
-        </div>
-
-
-        <div className="summary-item">
-
-          <span className="summary-dot absent"></span>
-
-          <span>Absent</span>
-
-          <strong>{absentCount}</strong>
-
-        </div>
-
-
-      </section>
-
+      
 
       {/* ======================================================
           MAIN TWO-COLUMN AREA
@@ -1446,7 +1731,9 @@ const selectedRiskState = getRiskState(
               </h2>
 
               <p>
-                Hall A · Current seating status
+                {isChiefInvigilator
+  ? `${activeChiefHall.name} · Current seating status`
+  : `${exam.hall_id || "HALL-A"} · Current seating status`}
               </p>
 
             </div>
@@ -1488,105 +1775,192 @@ const selectedRiskState = getRiskState(
           <div className="hall-content">
 
 
-            <div className="invigilator-desk">
 
-              INVIGILATOR DESK
+
+{/* ============================================================
+    DYNAMIC EXAMINATION HALL SEAT MAP
+    ============================================================ */}
+
+<div className="seat-map-wrapper">
+
+  <div className="seat-map-label">
+    <span>SEATING MAP</span>
+    <span>
+      {hallConfig.rows} rows × {hallConfig.columns_per_row} columns
+    </span>
+  </div>
+
+
+  <div className="seat-map-stage">
+
+    {/* INVIGILATOR DESK */}
+    <div className="invigilator-desk">
+      <span className="desk-icon">▣</span>
+      INVIGILATOR DESK
+    </div>
+
+
+    {/* COLUMN NUMBERS */}
+    <div className="seat-column-header">
+
+      <span className="row-label-spacer"></span>
+
+      {Array.from(
+        { length: hallConfig.columns_per_row },
+        (_, columnIndex) => (
+          <span
+            className="column-number"
+            key={`column-${columnIndex + 1}`}
+          >
+            {String(columnIndex + 1).padStart(2, "0")}
+          </span>
+        )
+      )}
+
+    </div>
+
+
+    {/* DYNAMIC ROWS */}
+    <div className="dynamic-seat-grid">
+
+      {Array.from(
+        { length: hallConfig.rows },
+        (_, rowIndex) => {
+
+          const row =
+            String.fromCharCode(65 + rowIndex);
+
+          const rowSeats =
+            seats.filter(
+              (seat) => seat.row === row
+            );
+
+          return (
+
+            <div
+              className="dynamic-seat-row"
+              key={row}
+            >
+
+              {/* ROW LABEL */}
+              <span className="seat-row-label">
+                {row}
+              </span>
+
+
+              {/* SEATS */}
+              {Array.from(
+                {
+                  length: hallConfig.columns_per_row,
+                },
+                (_, columnIndex) => {
+
+                  const column =
+                    columnIndex + 1;
+
+                  const seat =
+                    rowSeats.find(
+                      (item) =>
+                        Number(item.column) === column
+                    );
+
+
+                  /*
+                   * If a seat does not exist in the
+                   * backend/configuration, render an
+                   * empty position instead of inventing
+                   * a seat.
+                   */
+
+                  if (!seat) {
+
+                    return (
+                      <div
+                        className="seat-placeholder"
+                        key={`${row}-${column}`}
+                      />
+                    );
+
+                  }
+
+
+                  const seatId =
+                    seat.seat_id;
+
+                  const status =
+                    getSeatStatus(
+                      seatId,
+                      seatOverrides,
+                      backendRiskStates
+                    );
+
+
+                  const isSelected =
+                    selectedSeat === seatId;
+
+
+                  return (
+
+                    <button
+                      type="button"
+                      key={seatId}
+                      className={[
+                        "dynamic-seat",
+                        `seat-${status}`,
+                        isSelected
+                          ? "seat-selected"
+                          : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      onClick={() =>
+                        setSelectedSeat(seatId)
+                      }
+                      aria-label={`Seat ${seatId}, status ${status}`}
+                    >
+
+                      <span className="seat-status-dot"></span>
+
+                      <span className="seat-id">
+                        {seatId}
+                      </span>
+
+                    </button>
+
+                  );
+
+                }
+              )}
 
             </div>
 
+          );
 
-            <div
-  className="seat-grid"
-  style={{
-    gridTemplateRows: `repeat(${hallConfig.rows}, auto)`,
-  }}
->
+        }
+      )}
 
-  {Array.from(
-    { length: hallConfig.rows },
-    (_, rowIndex) => {
+    </div>
 
-      const row =
-        String.fromCharCode(
-          65 + rowIndex
-        );
-
-      const rowSeats =
-        seats.filter(
-          (seat) => seat.row === row
-        );
-
-      return (
-
-        <div
-          className="seat-row"
-          key={row}
-        >
-
-          <span className="row-label">
-            {row}
-          </span>
+  </div>
 
 
-          {rowSeats.map((seat) => {
+  {/* MAP FOOTER */}
+  <div className="seat-map-footer">
 
-            const seatId =
-              seat.seat_id;
+    <div>
+      <strong>{seats.length}</strong>
+      <span> seats configured</span>
+    </div>
 
-            const status =
-              getSeatStatus(
-                seatId,
-                seatOverrides,
-                backendRiskStates
-              );
+    <div>
+      <span>Click a seat to inspect risk state</span>
+    </div>
 
-
-            return (
-
-              <button
-                key={seatId}
-
-                className={`seat ${status} ${
-                  selectedSeat === seatId
-                    ? "selected"
-                    : ""
-                }`}
-
-                onClick={() => {
-
-                  setSelectedSeat(
-                    seatId
-                  );
-
-                  setActionMessage("");
-
-                }}
-
-              >
-
-                <span
-                  className={`seat-dot ${status}`}
-                ></span>
-
-
-                <span>
-                  {seatId}
-                </span>
-
-              </button>
-
-            );
-
-          })}
-
-        </div>
-
-      );
-
-    }
-  )}
+  </div>
 
 </div>
+
+
 
 
             <div className="hall-footer">
@@ -1877,188 +2251,710 @@ const selectedRiskState = getRiskState(
 
 
             {/* =================================================
-                WHY FLAGGED
-                ================================================= */}
+    RISK EXPLANATION
+    ================================================= */}
 
-            <div className="why-flagged">
+<div className="why-flagged">
 
+  <div className="section-heading-row">
 
-              {selectedRiskState.status === "normal" ? (
+    <div>
+      <span className="detail-label">
+        RISK ANALYSIS
+      </span>
 
-                <>
+      <h3>
+        Why was this flagged?
+      </h3>
+    </div>
 
-                  <h3>
-                    No active concerns
-                  </h3>
+    <span className="analysis-badge">
+      Multi-signal
+    </span>
 
-
-                  <p>
-                    This seat is currently behaving
-                    within the expected monitoring range.
-                  </p>
-
-
-                  <div className="normal-status-message">
-
-                    <span className="status-dot normal"></span>
-
-                    No suspicious behaviour detected
-
-                  </div>
-
-                </>
-
-              ) : selectedRiskState.status === "absent" ? (
-
-                <>
-
-                  <h3>
-                    Student absent
-                  </h3>
+  </div>
 
 
-                  <p>
-                    No active presence detected for
-                    this seat.
-                  </p>
+  {selectedRiskState.status === "normal" ? (
 
-                </>
+    <div className="normal-status-message">
 
-              ) : (
+      <span className="status-dot normal"></span>
 
-                <>
+      No suspicious behaviour detected
 
-                  <h3>
-                    Why was this flagged?
-                  </h3>
+    </div>
 
+  ) : selectedRiskState.status === "absent" ? (
 
-                  <p>
-                    Risk is based on persistent
-                    multi-signal behaviour, not a
-                    single moment.
-                  </p>
+    <div className="normal-status-message">
 
+      <span className="status-dot"></span>
 
-                  <div className="reason-list">
+      Student currently absent
 
+    </div>
 
-                    {selectedEvents
-                      .slice(0, 4)
-                      .map((event) => (
+  ) : (
 
-                        <div
-                          className="reason"
-                          key={event.event_id}
-                        >
+    <>
+
+      <p>
+        Risk is based on persistent multi-signal behaviour,
+        rather than a single observation.
+      </p>
 
 
-                          <div className="reason-header">
+      {/* -----------------------------------------------
+          SIGNAL CONTRIBUTIONS
+          ----------------------------------------------- */}
 
-                            <span>
-                              {event.event_type}
-                            </span>
+      <div className="reason-list">
 
-                            <strong>
-                              +{event.severity}
-                            </strong>
+        {selectedRiskState.contributions &&
+        selectedRiskState.contributions.length > 0 ? (
 
-                          </div>
+          selectedRiskState.contributions.map(
+            (contribution, index) => (
 
+              <div
+                className="reason"
+                key={`${contribution.signal}-${index}`}
+              >
 
-                          <div className="reason-bar">
+                <div className="reason-header">
 
-                            <div
-                              style={{
-                                width: `${Math.min(
-                                  event.severity * 4,
-                                  100
-                                )}%`,
-                              }}
-                            ></div>
+                  <span>
+                    {contribution.signal}
+                  </span>
 
-                          </div>
+                  <strong>
+                    +{contribution.points}
+                  </strong>
 
-
-                        </div>
-
-                      ))}
+                </div>
 
 
-                  </div>
+                <div className="reason-bar">
 
-                </>
+                  <div
+                    style={{
+                      width: `${Math.min(
+                        Number(contribution.points) * 4,
+                        100
+                      )}%`,
+                    }}
+                  ></div>
 
+                </div>
+
+              </div>
+
+            )
+          )
+
+        ) : (
+
+          selectedEvents
+            .slice(0, 4)
+            .map((event) => (
+
+              <div
+                className="reason"
+                key={event.event_id}
+              >
+
+                <div className="reason-header">
+
+                  <span>
+                    {event.event_type}
+                  </span>
+
+                  <strong>
+                    +{event.severity}
+                  </strong>
+
+                </div>
+
+
+                <div className="reason-bar">
+
+                  <div
+                    style={{
+                      width: `${Math.min(
+                        Number(event.severity) * 4,
+                        100
+                      )}%`,
+                    }}
+                  ></div>
+
+                </div>
+
+              </div>
+
+            ))
+
+        )}
+
+      </div>
+
+
+      <div className="confidence-row">
+
+        <span>
+          Detection confidence
+        </span>
+
+        <strong>
+          {Math.round(
+            selectedRiskState.confidence * 100
+          )}%
+        </strong>
+
+      </div>
+
+    </>
+
+  )}
+
+</div>
+
+
+{/* =================================================
+    EVENT TIMELINE
+    ================================================= */}
+
+<div className="event-timeline-section">
+
+  <div className="section-heading-row">
+
+    <div>
+
+      <span className="detail-label">
+        RECENT ACTIVITY
+      </span>
+
+      <h3>
+        Event Timeline
+      </h3>
+
+    </div>
+
+    <span className="timeline-count">
+      {selectedEvents.length}
+    </span>
+
+  </div>
+
+
+  {selectedEvents.length === 0 ? (
+
+    <div className="timeline-empty">
+
+      No behavioural events recorded for this seat.
+
+    </div>
+
+  ) : (
+
+    <div className="event-timeline">
+
+      {selectedEvents
+        .slice(0, 6)
+        .map((event, index) => (
+
+          <div
+            className="timeline-item"
+            key={event.event_id}
+          >
+
+            <div className="timeline-marker">
+
+              <span></span>
+
+              {index <
+                Math.min(
+                  selectedEvents.length,
+                  6
+                ) - 1 && (
+                <i></i>
               )}
-
 
             </div>
 
 
-            {/* =================================================
-                ACTIONS
-                ================================================= */}
+            <div className="timeline-content">
 
-            <div className="actions">
+              <div className="timeline-top">
 
+                <strong>
+                  {event.event_type}
+                </strong>
 
-              <button
-                className="confirm-btn"
-
-                onClick={() =>
-                  handleSeatAction(
-                    "confirmed"
-                  )
-                }
-
-              >
-                Confirm Incident
-              </button>
-
-
-              <div className="secondary-actions">
-
-
-                <button
-                  onClick={() =>
-                    handleSeatAction(
-                      "normal"
-                    )
-                  }
-                >
-                  Mark False Alarm
-                </button>
-
-
-                <button
-                  onClick={() =>
-                    handleSeatAction(
-                      "review"
-                    )
-                  }
-                >
-                  Keep Under Review
-                </button>
-
+                <span>
+                  {event.timestamp}
+                </span>
 
               </div>
 
 
-              {actionMessage && (
+              <div className="timeline-meta">
 
-                <div className="action-message">
+                <span>
+                  Severity: {event.severity}
+                </span>
 
-                  <span className="privacy-dot"></span>
+                {event.confidence != null && (
+                  <span>
+                    Confidence:{" "}
+                    {Math.round(
+                      event.confidence * 100
+                    )}%
+                  </span>
+                )}
 
-                  {actionMessage}
-
-                </div>
-
-              )}
-
+              </div>
 
             </div>
 
+          </div>
+
+        ))}
+
+    </div>
+
+  )}
+
+</div>
+
+
+{/* =================================================
+    HUMAN REVIEW
+    ================================================= */}
+
+<div className="actions">
+
+  <div className="section-heading-row">
+
+    <div>
+
+      <span className="detail-label">
+        HUMAN REVIEW
+      </span>
+
+      <h3>
+        Invigilator Decision
+      </h3>
+
+    </div>
+
+  </div>
+  <div className={`ledger-state ${
+  ledgerTx ? "anchored" : "pending"
+}`}>
+
+  <span className="ledger-state-dot"></span>
+
+  <div>
+
+    <strong>
+      {ledgerTx
+        ? "Decision anchored"
+        : "Ledger anchoring pending"}
+    </strong>
+
+    <span>
+      {ledgerTx
+        ? "This review decision has been recorded in the integrity ledger."
+        : "The final invigilator decision will be recorded as an integrity reference."
+      }
+    </span>
+
+  </div>
+
+</div>
+
+  <p className="review-helper-text">
+    Review the detected behaviour and record the
+    invigilator's decision.
+  </p>
+
+
+  <button
+    className="confirm-btn"
+    onClick={() =>
+      handleSeatAction("confirmed")
+    }
+    disabled={reviewLoading}
+  >
+
+    {reviewLoading
+      ? "Saving..."
+      : "Confirm Incident"}
+
+  </button>
+
+
+  <div className="secondary-actions">
+
+    <button
+      onClick={() =>
+        handleSeatAction("normal")
+      }
+      disabled={reviewLoading}
+    >
+      Mark False Alarm
+    </button>
+
+
+    <button
+      onClick={() =>
+        handleSeatAction("review")
+      }
+      disabled={reviewLoading}
+    >
+      Keep Under Review
+    </button>
+
+  </div>
+
+
+  {actionMessage && (
+
+    <div className="action-message">
+
+      <span className="privacy-dot"></span>
+
+      {actionMessage}
+
+    </div>
+
+  )}
+
+
+  {reviewError && (
+
+    <div
+      className="action-message"
+      style={{
+        color: "#b42318",
+      }}
+    >
+
+      <span className="privacy-dot"></span>
+
+      {reviewError}
+
+    </div>
+
+  )}
+<div className="integrity-flow">
+
+  <div className="integrity-step complete">
+
+    <span className="integrity-step-dot"></span>
+
+    <div>
+      <strong>Behaviour detected</strong>
+      <span>Risk event generated</span>
+    </div>
+
+  </div>
+
+
+  <span className="integrity-connector"></span>
+
+
+  <div className="integrity-step complete">
+
+    <span className="integrity-step-dot"></span>
+
+    <div>
+      <strong>Invigilator review</strong>
+      <span>Human decision recorded</span>
+    </div>
+
+  </div>
+
+
+  <span className="integrity-connector"></span>
+
+
+  <div
+    className={`integrity-step ${
+      ledgerTx ? "complete" : "pending"
+    }`}
+  >
+
+    <span className="integrity-step-dot"></span>
+
+    <div>
+      <strong>Ledger record</strong>
+
+      <span>
+        {ledgerTx
+          ? "Decision anchored"
+          : "Awaiting anchoring"}
+      </span>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+  {ledgerTx && (
+
+  <div className="blockchain-integrity-card">
+
+  {/* =================================================
+      TRUST & INTEGRITY HEADER
+      ================================================= */}
+
+  <div className="blockchain-header">
+
+    <div>
+
+      <span className="detail-label">
+        TRUST & INTEGRITY
+      </span>
+
+      <h3>
+        Blockchain Integrity
+      </h3>
+
+    </div>
+
+    <span className="ledger-status">
+
+      <span className="ledger-status-dot"></span>
+
+      Decision Anchored
+
+    </span>
+
+  </div>
+
+
+  {/* =================================================
+      INTEGRITY MESSAGE
+      ================================================= */}
+
+  <p className="blockchain-description">
+
+    The invigilator decision has been recorded as a
+    tamper-evident examination integrity reference.
+
+  </p>
+
+
+  {/* =================================================
+      INTEGRITY RECORD
+      ================================================= */}
+
+  <div className="integrity-record-section">
+
+    <div className="integrity-section-heading">
+
+      <span className="detail-label">
+        INTEGRITY RECORD
+      </span>
+
+      <span className="integrity-record-status">
+        Recorded
+      </span>
+
+    </div>
+
+
+    <div className="integrity-record-grid">
+
+      <div className="ledger-detail">
+
+        <span>
+          Seat
+        </span>
+
+        <strong>
+          {selectedSeat || "—"}
+        </strong>
+
+      </div>
+
+
+      <div className="ledger-detail">
+
+        <span>
+          Decision
+        </span>
+
+        <strong>
+          Confirmed Incident
+        </strong>
+
+      </div>
+
+
+      <div className="ledger-detail">
+
+        <span>
+          Risk Score
+        </span>
+
+        <strong>
+          {selectedRiskState?.risk_score ?? "—"}
+          {selectedRiskState?.risk_score != null
+            ? " / 100"
+            : ""}
+        </strong>
+
+      </div>
+
+
+      <div className="ledger-detail">
+
+        <span>
+          Identity
+        </span>
+
+        <strong>
+          Anonymous
+        </strong>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  {/* =================================================
+      LEDGER PROOF
+      ================================================= */}
+
+  <div className="ledger-proof-section">
+
+    <div className="integrity-section-heading">
+
+      <span className="detail-label">
+        LEDGER PROOF
+      </span>
+
+      <span className="ledger-proof-status">
+        Anchored
+      </span>
+
+    </div>
+
+
+    <div className="ledger-details">
+
+      <div className="ledger-detail">
+
+        <span>
+          Transaction
+        </span>
+
+        <strong>
+          {ledgerTx.tx_ref ||
+            ledgerTx.tx_id ||
+            "—"}
+        </strong>
+
+      </div>
+
+
+      <div className="ledger-detail">
+
+        <span>
+          Block
+        </span>
+
+        <strong>
+          {ledgerTx.block_ref || "—"}
+        </strong>
+
+      </div>
+
+
+      <div className="ledger-detail">
+
+        <span>
+          Confirmations
+        </span>
+
+        <strong>
+
+          {ledgerTx.node_confirmations != null
+            ? ledgerTx.node_confirmations
+            : "—"}
+
+        </strong>
+
+      </div>
+
+
+      <div className="ledger-detail">
+
+        <span>
+          Chain Timestamp
+        </span>
+
+        <strong>
+          {ledgerTx.chain_timestamp || "—"}
+        </strong>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  {/* =================================================
+      VERIFICATION
+      ================================================= */}
+
+  <div className="ledger-verification">
+
+    <div className="verification-icon">
+      ✓
+    </div>
+
+    <div>
+
+      <strong>
+        Ledger Verified
+      </strong>
+
+      <span>
+        The decision has been anchored to the
+        examination integrity ledger.
+      </span>
+
+    </div>
+
+  </div>
+
+
+  {/* =================================================
+      AUDIT NOTE
+      ================================================= */}
+
+  <div className="ledger-audit-note">
+
+    <span className="privacy-dot"></span>
+
+    Decision recorded as a tamper-evident
+    examination audit reference.
+
+  </div>
+
+</div>
+)}
+
+</div>
 
             {/* =================================================
                 PRIVACY NOTE

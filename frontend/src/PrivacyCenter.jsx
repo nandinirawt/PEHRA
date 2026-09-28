@@ -1,6 +1,11 @@
 import "./PrivacyCenter.css";
-
-function PrivacyCenter() {
+function PrivacyCenter({
+  exam = {},
+  hallConfig = {},
+  seats = [],
+  selectedEvents = [],
+  integrityRecord = null,
+}) {
   return (
     <main className="privacy-page">
 
@@ -18,9 +23,36 @@ function PrivacyCenter() {
         </div>
 
         <div className="privacy-status">
-          <span className="privacy-status-dot"></span>
-          Privacy Protected
-        </div>
+
+  <div className="privacy-status-title">
+    <span className="privacy-status-dot"></span>
+
+    <strong>
+      Privacy Protected
+    </strong>
+  </div>
+
+
+  <div className="privacy-status-details">
+
+    <span>
+      <b>✓</b>
+      Local processing
+    </span>
+
+    <span>
+      <b>✓</b>
+      Identity not captured
+    </span>
+
+    <span>
+      <b>✓</b>
+      Face recognition disabled
+    </span>
+
+  </div>
+
+</div>
       </section>
 
 
@@ -238,7 +270,458 @@ function PrivacyCenter() {
 
       </section>
 
+          {/* =====================================================
+          INTEGRITY & LEDGER
+      ====================================================== */}
 
+      <section className="integrity-panel">
+
+        {/* HEADER */}
+
+        <div className="integrity-header">
+
+          <div>
+
+            <span className="privacy-eyebrow">
+              CHAIN OF CUSTODY
+            </span>
+
+            <h2>
+              Integrity & Ledger
+            </h2>
+
+            <p>
+              Confirmed examination records are fingerprinted and
+              anchored to the integrity ledger for later verification.
+            </p>
+
+          </div>
+
+
+          <div className="integrity-status">
+
+            <span className="integrity-status-dot"></span>
+
+            <div>
+              <strong>
+                VERIFIED
+              </strong>
+
+              <span>
+                Integrity check passed
+              </span>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        {/* VERIFICATION FLOW */}
+
+        <div className="integrity-flow">
+
+          <div className="integrity-step">
+
+            <span className="integrity-step-number">
+              01
+            </span>
+
+            <div className="integrity-step-icon">
+              ✓
+            </div>
+
+            <strong>
+              Exam Record
+            </strong>
+
+            <span>
+              Confirmed incident
+            </span>
+
+          </div>
+
+
+          <div className="integrity-connector">
+            →
+          </div>
+
+
+          <div className="integrity-step">
+
+            <span className="integrity-step-number">
+              02
+            </span>
+
+            <div className="integrity-step-icon">
+              #
+            </div>
+
+            <strong>
+              Fingerprint
+            </strong>
+
+            <span>
+              Integrity hash generated
+            </span>
+
+          </div>
+
+
+          <div className="integrity-connector">
+            →
+          </div>
+
+
+          <div className="integrity-step">
+
+            <span className="integrity-step-number">
+              03
+            </span>
+
+            <div className="integrity-step-icon">
+              ◈
+            </div>
+
+            <strong>
+              Ledger
+            </strong>
+
+            <span>
+              Record anchored
+            </span>
+
+          </div>
+
+
+          <div className="integrity-connector">
+            →
+          </div>
+
+
+          <div className="integrity-step verified-step">
+
+            <span className="integrity-step-number">
+              04
+            </span>
+
+            <div className="integrity-step-icon">
+              ✓
+            </div>
+
+            <strong>
+              Verified
+            </strong>
+
+            <span>
+              Record integrity confirmed
+            </span>
+
+          </div>
+
+        </div>
+
+
+        {/* LEDGER DETAILS */}
+
+        <div className="ledger-details">
+
+          <div className="ledger-detail">
+
+            <span>
+              INTEGRITY STATUS
+            </span>
+
+            <strong className="verified-text">
+              VERIFIED
+            </strong>
+
+          </div>
+
+
+          <div className="ledger-detail">
+
+            <span>
+              RECORD FINGERPRINT
+            </span>
+
+            <strong className="ledger-mono">
+              8f42a7c9...d91e
+            </strong>
+
+          </div>
+
+
+          <div className="ledger-detail">
+
+            <span>
+              TRANSACTION
+            </span>
+
+            <strong className="ledger-mono">
+              TX-PEHRA-7A91C2
+            </strong>
+
+          </div>
+
+
+          <div className="ledger-detail">
+
+            <span>
+              BLOCK
+            </span>
+
+            <strong className="ledger-mono">
+              #18427
+            </strong>
+
+          </div>
+
+
+          <div className="ledger-detail">
+
+            <span>
+              CONFIRMATIONS
+            </span>
+
+            <strong>
+              3 confirmations
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        {/* PRIVACY EXPLANATION */}
+
+        <div className="ledger-privacy-note">
+
+          <span className="ledger-privacy-icon">
+            ✓
+          </span>
+
+          <div>
+
+            <strong>
+              Integrity proof, not identity storage
+            </strong>
+
+            <p>
+              The ledger representation is used to verify the
+              integrity of examination records. It does not store
+              student names, facial identities or raw examination
+              footage.
+            </p>
+
+          </div>
+
+        </div>
+
+      </section>
+      {/* =====================================================
+    SESSION INTEGRITY CERTIFICATE
+====================================================== */}
+
+<section className="certificate-panel">
+
+  <div className="certificate-header">
+
+    <div>
+
+      <span className="privacy-eyebrow">
+        SESSION INTEGRITY
+      </span>
+
+      <h2>
+        Integrity Certificate
+      </h2>
+
+      <p>
+        A tamper-evident summary of the examination session
+        generated after the monitoring session is completed.
+      </p>
+
+    </div>
+
+
+    <div className="certificate-status">
+
+      <span className="certificate-check">
+        ✓
+      </span>
+
+      <div>
+
+        <strong>
+          VERIFIED
+        </strong>
+
+        <span>
+          Session integrity confirmed
+        </span>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  {/* CERTIFICATE BODY */}
+
+  <div className="certificate-body">
+
+    <div className="certificate-main">
+
+      <div className="certificate-icon">
+        ✓
+      </div>
+
+      <div>
+
+        <span className="certificate-label">
+          PEHRA SESSION
+        </span>
+
+        <h3>
+          Examination Integrity Certificate
+        </h3>
+
+        <p>
+          This certificate represents the integrity state of
+          the completed examination monitoring session.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    {/* SESSION INFORMATION */}
+
+    <div className="certificate-grid">
+
+      <div className="certificate-field">
+
+        <span>
+          EXAMINATION
+        </span>
+
+        <strong>
+  Examination
+</strong>
+
+      </div>
+
+
+      <div className="certificate-field">
+
+        <span>
+          HALL
+        </span>
+
+        <strong>
+  HALL-A
+</strong>
+
+      </div>
+
+
+      <div className="certificate-field">
+
+        <span>
+          SESSION DATE
+        </span>
+
+        <strong>
+          15 Aug 2026
+        </strong>
+
+      </div>
+
+
+      <div className="certificate-field">
+
+        <span>
+          MONITORED SEATS
+        </span>
+
+        <strong>
+  {seats?.length || 0}
+</strong>
+
+      </div>
+
+
+      <div className="certificate-field">
+
+        <span>
+          INCIDENTS REVIEWED
+        </span>
+
+        <strong>
+  {selectedEvents?.length || 0}
+</strong>
+
+      </div>
+
+
+      <div className="certificate-field">
+
+        <span>
+          INTEGRITY STATE
+        </span>
+
+        <strong className="certificate-verified">
+          VERIFIED
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    {/* CERTIFICATE FINGERPRINT */}
+
+    <div className="certificate-fingerprint">
+
+      <div>
+
+        <span>
+          SESSION FINGERPRINT
+        </span>
+
+        <strong>
+  {integrityRecord?.fingerprint || "Pending integrity record"}
+</strong>
+
+      </div>
+
+      <div className="fingerprint-status">
+        ✓ Ledger verified
+      </div>
+
+    </div>
+
+
+    {/* FOOTER */}
+
+    <div className="certificate-footer">
+
+      <span>
+        Generated from examination integrity record
+      </span>
+
+      <span>
+        No student identity data included
+      </span>
+
+    </div>
+
+  </div>
+
+</section>
       {/* DATA PRINCIPLES */}
       <section className="privacy-panel privacy-principles">
 

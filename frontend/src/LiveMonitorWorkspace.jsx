@@ -81,10 +81,52 @@ function LiveMonitorWorkspace() {
 
     try {
 
-      localStorage.setItem(
-        "pehraExamConfig",
-        JSON.stringify(examConfiguration)
-      );
+      // Save exam configuration
+localStorage.setItem(
+  "pehraExamConfig",
+  JSON.stringify(examConfiguration)
+);
+
+// Generate dynamic seats for Live Monitor
+const generatedSeats = Array.from(
+  { length: numericRows * numericSeatsPerRow },
+  (_, index) => {
+    const rowIndex = Math.floor(
+      index / numericSeatsPerRow
+    );
+
+    const column =
+      (index % numericSeatsPerRow) + 1;
+
+    const row =
+      String.fromCharCode(65 + rowIndex);
+
+    return {
+      seat_id: `${row}-${String(column).padStart(2, "0")}`,
+      row,
+      column,
+      status: "normal",
+    };
+  }
+);
+
+// Save the structure expected by LiveMonitor
+const hallConfiguration = {
+  total_seats: totalSeats,
+  columns_per_row: numericSeatsPerRow,
+  rows: numericRows,
+  seats: generatedSeats,
+};
+
+localStorage.setItem(
+  "pehraHallConfig",
+  JSON.stringify(hallConfiguration)
+);
+
+console.log(
+  "PEHRA hall configuration saved:",
+  hallConfiguration
+);
 
       console.log(
         "PEHRA exam configuration saved:",
@@ -1138,7 +1180,31 @@ const reportIncidents = reportUnderReview + reportHighRisk;
             </span>
           </button>
 
+                      {/* CURRENT HALL CONTEXT */}
 
+          {section === "monitoring" && (
+            <div className="current-hall-context">
+
+              <span className="current-hall-label">
+                CURRENT HALL
+              </span>
+
+              <div className="current-hall-name">
+
+                <span className="current-hall-dot"></span>
+
+                <strong>
+                  {hallNumber || "HALL-A"}
+                </strong>
+
+              </div>
+
+              <span className="current-hall-description">
+                Active monitoring scope
+              </span>
+
+            </div>
+          )}
           <button
             className={
               section === "alerts"
