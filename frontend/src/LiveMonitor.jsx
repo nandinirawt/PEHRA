@@ -1267,11 +1267,27 @@ useEffect(() => {
 
       // confirm_incident returns the ledger transaction metadata.
       if (backendAction === "confirm_incident") {
-        setLedgerTx(response?.ledger_tx ?? null);
-        setLedgerEventId(response?.event_id ?? latestEvent?.event_id ?? null);
-        setIntegrityVerification(null);
-        setVerificationError("");
-      } else {
+  const newLedgerTx = response?.ledger_tx ?? null;
+  const newLedgerEventId =
+    response?.event_id ?? latestEvent?.event_id ?? null;
+
+  setLedgerTx(newLedgerTx);
+  setLedgerEventId(newLedgerEventId);
+  setIntegrityVerification(null);
+  setVerificationError("");
+
+  // Make the latest anchored record available to Privacy Center
+  localStorage.setItem(
+    "pehraIntegrityRecord",
+    JSON.stringify({
+      event_id: newLedgerEventId,
+      ledger_tx: newLedgerTx,
+      exam_id: EXAM_ID,
+      seat_id: selectedSeat,
+      created_at: new Date().toISOString(),
+    })
+  );
+} else {
         setLedgerTx(null);
         setLedgerEventId(null);
         setIntegrityVerification(null);
