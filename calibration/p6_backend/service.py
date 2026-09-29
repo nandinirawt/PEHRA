@@ -6,6 +6,8 @@ from calibration.p6_backend.models import (
     CalibrationResult,
 )
 
+from calibration.zone_mapping.mapper import generate_seats
+
 
 class CalibrationService:
 
@@ -14,14 +16,50 @@ class CalibrationService:
         # Person 4 can replace this with SQLite later.
         self.sessions: Dict[str, dict] = {}
 
+    @staticmethod
+    def seat_id_from_position(
+        row: int,
+        column: int,
+    ) -> str:
+        """
+        Convert a 1-based row/column position into
+        the canonical PEHRA seat ID format.
+
+        Example:
+            row=1, column=1 -> A01
+            row=1, column=2 -> A02
+            row=2, column=1 -> B01
+        """
+
+        if row <= 0:
+            raise ValueError(
+                "Row must be greater than 0."
+            )
+
+        if column <= 0:
+            raise ValueError(
+                "Column must be greater than 0."
+            )
+
+        row_letter = chr(
+            ord("A") + row - 1
+        )
+
+        return f"{row_letter}{column:02d}"
+
     def start(
         self,
         request: StartCalibrationRequest,
     ) -> dict:
 
         expected_seats = (
-            request.rows *
-            request.columns
+            request.rows
+            * request.columns
+        )
+
+        expected_layout = generate_seats(
+            request.rows,
+            request.columns,
         )
 
         session = {
@@ -30,11 +68,14 @@ class CalibrationService:
             "rows": request.rows,
             "columns": request.columns,
             "expected_seats": expected_seats,
+            "expected_layout": expected_layout,
             "seats": [],
             "status": "in_progress",
         }
 
-        self.sessions[request.exam_id] = session
+        self.sessions[
+            request.exam_id
+        ] = session
 
         return {
             "exam_id": request.exam_id,
@@ -43,6 +84,7 @@ class CalibrationService:
             "rows": request.rows,
             "columns": request.columns,
             "expected_seats": expected_seats,
+            "seat_ids": expected_layout,
         }
 
     def update(
@@ -56,11 +98,15 @@ class CalibrationService:
                 "Calibration session not found."
             )
 
-        session = self.sessions[exam_id]
+        session = self.sessions[
+            exam_id
+        ]
 
         session["seats"] = seats
 
-        return self.validate(exam_id)
+        return self.validate(
+            exam_id
+        )
 
     def validate(
         self,
@@ -72,7 +118,9 @@ class CalibrationService:
                 "Calibration session not found."
             )
 
-        session = self.sessions[exam_id]
+        session = self.sessions[
+            exam_id
+        ]
 
         rows = session["rows"]
         columns = session["columns"]
@@ -81,49 +129,62 @@ class CalibrationService:
             rows * columns
         )
 
-        seats = session["seats"]
-
-        # Expected logical seat labels.
-        expected_labels = {
-            f"{row}-{column}"
-            for row in range(1, rows + 1)
-            for column in range(1, columns + 1)
-        }
-
-        seen = []
-        duplicates = []
-
-        for seat in seats:
-
-            label = (
-                f"{seat.row}-{seat.column}"
-            )
-
-            if label in seen:
-                duplicates.append(label)
-            else:
-                seen.append(label)
-
-        seen_set = set(seen)
-
-        missing = sorted(
-            expected_labels - seen_set
+        expected_labels = set(
+            session["expected_layout"]
         )
 
-        mapped_seats = len(seen_set)
+        seats = session["seats"]
+
+        mapped_labels = [
+            self.seat_id_from_position(
+                seat.row,
+                seat.column,
+            )
+            for seat in seats
+        ]
+
+        duplicate_seats = sorted(
+            {
+                seat_id
+                for seat_id in mapped_labels
+                if mapped_labels.count(
+                    seat_id
+                ) > 1
+            }
+        )
+
+        mapped_set = set(
+            mapped_labels
+        )
+
+        missing_seats = sorted(
+            expected_labels - mapped_set
+        )
+
+        unexpected_seats = sorted(
+            mapped_set - expected_labels
+        )
+
+        mapped_seats = len(
+            expected_labels.intersection(
+                mapped_set
+            )
+        )
 
         coverage = (
-            mapped_seats /
-            expected_seats *
-            100
+            mapped_seats
+            / expected_seats
+            * 100
             if expected_seats
             else 0
         )
 
         is_valid = (
-            mapped_seats == expected_seats
-            and not missing
-            and not duplicates
+            mapped_seats
+            == expected_seats
+            and not missing_seats
+            and not unexpected_seats
+            and not duplicate_seats
         )
 
         status = (
@@ -133,6 +194,9 @@ class CalibrationService:
         )
 
         session["status"] = status
+        session["mapped_seat_ids"] = sorted(
+            mapped_set
+        )
 
         return CalibrationResult(
             exam_id=exam_id,
@@ -146,12 +210,9 @@ class CalibrationService:
                 coverage,
                 2,
             ),
-            missing_seats=sorted(
-                missing
-            ),
-            duplicate_seats=sorted(
-                duplicates
-            ),
+            missing_seats=missing_seats,
+            unexpected_seats=unexpected_seats,
+            duplicate_seats=duplicate_seats,
         )
 
     def get(
@@ -164,4 +225,6 @@ class CalibrationService:
                 "Calibration session not found."
             )
 
-        return self.sessions[exam_id]
+        return self.sessions[
+            exam_id
+        ]
