@@ -1,3 +1,11 @@
+from config import (
+    MAX_RISK_SCORE,
+    MIN_RISK_SCORE,
+    SCORE_UNDER_REVIEW_MIN,
+    SCORE_HIGH_RISK_MIN,
+)
+
+
 NORMAL = "normal"
 UNDER_REVIEW = "under_review"
 HIGH_RISK = "high_risk"
@@ -5,13 +13,13 @@ HIGH_RISK = "high_risk"
 
 def get_risk_state(score: float) -> str:
     """
-    Convert a risk score (0-100) into a PEHRA risk state.
+    Convert a risk score into the PEHRA risk state.
     """
 
-    if score >= 65:
+    if score >= SCORE_HIGH_RISK_MIN:
         return HIGH_RISK
 
-    if score >= 35:
+    if score >= SCORE_UNDER_REVIEW_MIN:
         return UNDER_REVIEW
 
     return NORMAL
@@ -24,9 +32,6 @@ def calculate_risk_score(
     neighbor_interaction_points: int = 0,
     temporal_points: int = 0,
 ) -> dict:
-    """
-    Calculate an explainable prototype risk score.
-    """
 
     contributions = [
         {
@@ -51,17 +56,29 @@ def calculate_risk_score(
         },
     ]
 
-    score = sum(item["points"] for item in contributions)
-
-    score = min(score, 100)
-
-    # Prevent a single weak signal from immediately becoming high risk.
-    active_signals = sum(
-        1 for item in contributions if item["points"] > 0
+    score = sum(
+        item["points"]
+        for item in contributions
     )
 
+    score = min(
+        MAX_RISK_SCORE,
+        max(MIN_RISK_SCORE, score),
+    )
+
+    active_signals = sum(
+        1
+        for item in contributions
+        if item["points"] > 0
+    )
+
+    # A single weak signal cannot directly create
+    # an under-review/high-risk state.
     if active_signals < 2:
-        score = min(score, 34)
+        score = min(
+            score,
+            SCORE_UNDER_REVIEW_MIN - 1,
+        )
 
     status = get_risk_state(score)
 
@@ -73,7 +90,7 @@ def calculate_risk_score(
 
 
 if __name__ == "__main__":
-    # Test 1: one small movement
+
     print(
         "Single head turn:",
         calculate_risk_score(
@@ -81,7 +98,6 @@ if __name__ == "__main__":
         )
     )
 
-    # Test 2: two signals
     print(
         "Repeated movement + body orientation:",
         calculate_risk_score(
@@ -90,7 +106,6 @@ if __name__ == "__main__":
         )
     )
 
-    # Test 3: multiple persistent signals
     print(
         "Multi-signal suspicious pattern:",
         calculate_risk_score(
