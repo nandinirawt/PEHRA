@@ -1,0 +1,252 @@
+/* ============================================================
+   PEHRA — CHIEF LAYOUT
+============================================================ */
+
+.chief-shell {
+  min-height: 100vh;
+  background: #f7f8fa;
+}
+
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+
+.chief-navigation {
+  height: 68px;
+
+  padding: 0 34px;
+
+  display: flex;
+  align-items: center;
+
+  background: #ffffff;
+
+  border-bottom: 1px solid #e5e7eb;
+
+  position: sticky;
+  top: 0;
+
+  z-index: 100;
+
+  box-sizing: border-box;
+}
+
+
+/* ============================================================
+   BRAND
+============================================================ */
+
+.chief-nav-brand {
+  display: flex;
+  align-items: center;
+
+  min-width: 300px;
+
+  gap: 13px;
+}
+
+.chief-nav-logo {
+  width: 68px;
+  height: auto;
+
+  object-fit: contain;
+}
+
+.chief-nav-divider {
+  width: 1px;
+  height: 30px;
+
+  background: #e3e6eb;
+}
+
+.chief-nav-title {
+  display: flex;
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.chief-nav-title strong {
+  color: #172033;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.chief-nav-title span {
+  color: #7a8494;
+
+  font-size: 9px;
+}
+
+
+/* ============================================================
+   LINKS
+============================================================ */
+
+.chief-nav-links {
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 4px;
+
+  margin-left: 30px;
+}
+
+.chief-nav-links button {
+  height: 100%;
+
+  position: relative;
+
+  padding: 0 15px;
+
+  border: none;
+  background: transparent;
+
+  color: #687386;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.chief-nav-links button:hover {
+  color: #172033;
+}
+
+.chief-nav-links button.active {
+  color: #172033;
+}
+
+.chief-nav-links button.active::after {
+  content: "";
+
+  position: absolute;
+
+  left: 15px;
+  right: 15px;
+  bottom: 0;
+
+  height: 2px;
+
+  background: #e1b52f;
+
+  border-radius: 2px 2px 0 0;
+}
+
+
+/* ============================================================
+   ROLE
+============================================================ */
+
+.chief-nav-role {
+  margin-left: auto;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  padding-left: 20px;
+
+  border-left: 1px solid #e5e7eb;
+}
+
+.chief-role-dot {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: #43a574;
+
+  box-shadow:
+    0 0 0 4px #eaf7f0;
+}
+
+.chief-nav-role strong {
+  display: block;
+
+  color: #263044;
+
+  font-size: 10px;
+}
+
+.chief-nav-role span:not(
+  .chief-role-dot
+) {
+  display: block;
+
+  color: #7a8494;
+
+  font-size: 9px;
+
+  margin-top: 2px;
+}
+
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+
+@media (max-width: 900px) {
+
+  .chief-navigation {
+    padding: 0 18px;
+  }
+
+  .chief-nav-brand {
+    min-width: auto;
+  }
+
+  .chief-nav-title {
+    display: none;
+  }
+
+  .chief-nav-links {
+    margin-left: 15px;
+  }
+
+}
+
+
+@media (max-width: 650px) {
+
+  .chief-navigation {
+    height: auto;
+
+    min-height: 62px;
+
+    flex-wrap: wrap;
+
+    padding: 10px 15px;
+    gap: 8px;
+  }
+
+  .chief-nav-links {
+    order: 3;
+
+    width: 100%;
+
+    height: 42px;
+
+    margin-left: 0;
+
+    border-top: 1px solid #edf0f3;
+  }
+
+  .chief-nav-links button {
+    height: 42px;
+  }
+
+  .chief-nav-role {
+    padding-left: 12px;
+  }
+
+}

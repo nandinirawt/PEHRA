@@ -9,24 +9,46 @@ import CameraCalibration from "./CameraCalibration.jsx";
 import LiveMonitorWorkspace from "./LiveMonitorWorkspace.jsx";
 import PrivacyCenter from "./PrivacyCenter.jsx";
 
+
+import ChiefLayout from "./chief/ChiefLayout.jsx";
+
 import "./App.css";
 
 function App() {
   const [page, setPage] = useState("dashboard");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [role, setRole] = useState(null);
+
+  const handleLogin = (selectedRole) => {
+    setRole(selectedRole);
+    setIsLoggedIn(true);
+  };
 
   const handleOpenMonitor = () => {
     setPage("live");
   };
 
+  /*
+   * LOGIN
+   */
   if (!isLoggedIn) {
     return (
       <Login
-        onLogin={() => setIsLoggedIn(true)}
+        onLogin={handleLogin}
       />
     );
   }
 
+  /*
+   * CHIEF INVIGILATOR
+   */
+  if (role === "chief") {
+  return <ChiefLayout />;
+}
+
+  /*
+   * EXISTING INVIGILATOR FLOW
+   */
   return (
     <div className="app">
 

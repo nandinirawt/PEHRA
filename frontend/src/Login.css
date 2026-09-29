@@ -528,3 +528,49 @@
     font-size: 26px;
   }
 }
+/* ================= ROLE SELECTOR ================= */
+
+.login-role-section {
+  margin-bottom: 22px;
+}
+
+.login-role-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #777;
+}
+
+.login-role-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 4px;
+  border: 1px solid #dedede;
+  border-radius: 10px;
+  background: #f7f7f7;
+}
+
+.login-role-button {
+  border: none;
+  border-radius: 7px;
+  padding: 10px 12px;
+  background: transparent;
+  color: #666;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.login-role-button:hover {
+  color: #222;
+}
+
+.login-role-button.active {
+  background: #ffffff;
+  color: #222;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+}

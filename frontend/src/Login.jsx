@@ -104,6 +104,7 @@ function Login({ onLogin }) {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [role, setRole] = useState("invigilator");
   const [error, setError] = useState("");
 
   const handleSubmit = (e) => {
@@ -116,12 +117,11 @@ function Login({ onLogin }) {
 
     // Temporary frontend login.
     // Real backend authentication will be connected later.
-    onLogin();
+    onLogin(role);
   };
 
   return (
     <main className="login-page">
-
       <section className="login-shell">
 
         {/* LEFT SIDE */}
@@ -135,7 +135,6 @@ function Login({ onLogin }) {
           />
 
         </div>
-
 
         {/* RIGHT SIDE */}
 
@@ -157,7 +156,6 @@ function Login({ onLogin }) {
 
             </div>
 
-
             {/* HEADING */}
 
             <div className="login-heading">
@@ -172,6 +170,49 @@ function Login({ onLogin }) {
 
             </div>
 
+            {/* ROLE SELECTION */}
+
+            <div className="login-role-section">
+
+              <span className="login-role-label">
+                ACCESS AS
+              </span>
+
+              <div className="login-role-selector">
+
+                <button
+                  type="button"
+                  className={`login-role-button ${
+                    role === "invigilator"
+                      ? "active"
+                      : ""
+                  }`}
+                  onClick={() => {
+                    setRole("invigilator");
+                    setError("");
+                  }}
+                >
+                  Invigilator
+                </button>
+
+                <button
+                  type="button"
+                  className={`login-role-button ${
+                    role === "chief"
+                      ? "active"
+                      : ""
+                  }`}
+                  onClick={() => {
+                    setRole("chief");
+                    setError("");
+                  }}
+                >
+                  Chief Invigilator
+                </button>
+
+              </div>
+
+            </div>
 
             {/* FORM */}
 
@@ -210,7 +251,6 @@ function Login({ onLogin }) {
 
               </div>
 
-
               {/* PASSWORD */}
 
               <div className="login-field">
@@ -227,7 +267,11 @@ function Login({ onLogin }) {
 
                   <input
                     id="password"
-                    type={showPassword ? "text" : "password"}
+                    type={
+                      showPassword
+                        ? "text"
+                        : "password"
+                    }
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => {
@@ -249,13 +293,14 @@ function Login({ onLogin }) {
                         : "Show password"
                     }
                   >
-                    <EyeIcon visible={showPassword} />
+                    <EyeIcon
+                      visible={showPassword}
+                    />
                   </button>
 
                 </div>
 
               </div>
-
 
               {/* REMEMBER ME + FORGOT PASSWORD */}
 
@@ -267,7 +312,9 @@ function Login({ onLogin }) {
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) =>
-                      setRememberMe(e.target.checked)
+                      setRememberMe(
+                        e.target.checked
+                      )
                     }
                   />
 
@@ -286,7 +333,6 @@ function Login({ onLogin }) {
 
               </div>
 
-
               {/* ERROR */}
 
               {error && (
@@ -294,7 +340,6 @@ function Login({ onLogin }) {
                   {error}
                 </p>
               )}
-
 
               {/* SIGN IN */}
 
@@ -309,11 +354,9 @@ function Login({ onLogin }) {
                 <span className="signin-arrow">
                   →
                 </span>
-
               </button>
 
             </form>
-
 
             {/* PRIVACY */}
 
@@ -346,7 +389,6 @@ function Login({ onLogin }) {
         </div>
 
       </section>
-
     </main>
   );
 }
